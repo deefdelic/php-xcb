@@ -7,7 +7,10 @@ aclocal
 libtoolize --force
 autoheader
 autoconf
-./configure --with-xcb --enable-debug
+./configure --with-xcb
 make
 make install
+
+php --re xcb
+
 php test.php
