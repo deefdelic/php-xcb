@@ -28,20 +28,11 @@
 #include "php_xcb.h"
 #include <xcb/xcb.h>
 
-/* If you declare any globals in php_xcb.h uncomment this:
- ZEND_DECLARE_MODULE_GLOBALS(xcb)
- */
+int le_xcb_connection;
+ZEND_DECLARE_MODULE_GLOBALS( xcb)
 
 /* True global resources - no need for thread safety here */
 static int le_xcb;
-xcb_connection_t *xconnection; // The connection to the X server.
-xcb_screen_t *screen; //The active Screen
-
-//TODO: unsure if these are needed, or if they really need to be global:
-xcb_atom_t atom_desktop;
-xcb_atom_t wm_delete_window;
-xcb_atom_t wm_protocols;
-//
 
 /* {{{ xcb_functions[]
  *
@@ -128,6 +119,7 @@ PHP_MINIT_FUNCTION( xcb) {
 	/* If you have INI entries, uncomment these lines 
 	 REGISTER_INI_ENTRIES();
 	 */
+	le_xcb_connection = zend_register_list_destructors_ex(NULL, NULL, PHP_XCB_CONNECTION_RES_NAME, module_number);
 	return SUCCESS;
 }
 /* }}} */
@@ -154,10 +146,11 @@ PHP_RINIT_FUNCTION( xcb) {
 /* {{{ PHP_RSHUTDOWN_FUNCTION
  */
 PHP_RSHUTDOWN_FUNCTION( xcb) {
-	if (xconnection) {
-		xcb_disconnect(xconnection);
-	}
-	return SUCCESS;
+	//TODO: fix this to clean up any resources we opened
+	//	if (xconnection) {
+	//		xcb_disconnect(xconnection);
+	//	}
+	//	return SUCCESS;
 }
 /* }}} */
 
@@ -200,10 +193,16 @@ PHP_MINFO_FUNCTION( xcb) {
 //
 //}
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_xcb_init, 0, 0, 0)
+		ZEND_ARG_INFO(0, displaynum)
+ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_init) {
 	char *dispnum = NULL;
 	int dispnum_len;
+	xcb_connection_t *xconnection; // The connection to the X server.
+	xcb_screen_t *screen; //The active Screen
+	php_xcb_connection *c;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &dispnum, &dispnum_len) == SUCCESS) {
 		xconnection = xcb_connect(dispnum, NULL);
 		//		atom_desktop = xcb_atom_get(xconnection, "_NET_WM_DESKTOP");
@@ -219,70 +218,156 @@ PHP_FUNCTION( xcb_init) {
 		if (xcb_connection_has_error(xconnection)) {
 			RETURN_BOOL(1);
 		} else {
-			screen = xcb_setup_roots_iterator(xcb_get_setup(xconnection)).data;
-			RETURN_BOOL(0);
+			c = emalloc(sizeof(php_xcb_connection));
+			c->connection = xconnection;
+			c->screen = xcb_setup_roots_iterator(xcb_get_setup(xconnection)).data;
+			ZEND_REGISTER_RESOURCE(return_value, c, le_xcb_connection);
 		}
 	}
 }
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_root_width_in_pixels, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_root_width_in_pixels) {
-	if (screen) {
-		RETURN_LONG(screen->width_in_pixels);
+	php_xcb_connection *c;
+	zval *zconnection;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zconnection) == FAILURE) {
+		return;
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	if (c->screen) {
+		RETURN_LONG(c->screen->width_in_pixels);
 	} else {
 		RETURN_LONG(0);
 	}
 }
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_root_id, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_root_id) {
-	if (screen) {
-		RETURN_LONG((int) screen->root);
+	php_xcb_connection *c;
+	zval *zconnection;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zconnection) == FAILURE) {
+		return;
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
+	if (c->screen) {
+		RETURN_LONG((int) c->screen->root);
 	} else {
 		RETURN_LONG(0);
 	}
 }
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_root_height_in_pixels, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_root_height_in_pixels) {
-	if (screen) {
-		RETURN_LONG(screen->height_in_pixels);
+	php_xcb_connection *c;
+	zval *zconnection;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zconnection) == FAILURE) {
+		return;
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
+	if (c->screen) {
+		RETURN_LONG(c->screen->height_in_pixels);
 	} else {
 		RETURN_LONG(0);
 	}
 }
 
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_generate_id, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_generate_id) {
-	xcb_window_t newID = xcb_generate_id(xconnection);
+	php_xcb_connection *c;
+	zval *zconnection;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zconnection) == FAILURE) {
+		return;
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	xcb_window_t newID = xcb_generate_id(c->connection);
 	RETURN_LONG(newID);
 }
 
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_create_window, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, parent_window_id)
+		ZEND_ARG_INFO(0, width)
+		ZEND_ARG_INFO(0, height)
+		ZEND_ARG_INFO(0, x)
+		ZEND_ARG_INFO(0, y)
+		ZEND_ARG_INFO(0, border_width)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_create_window) {
+	php_xcb_connection *c;
+	zval *zconnection;
 	int windowId, parentId, width, height, x, y, border;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lllllll", &windowId, &parentId, &width, &height, &x, &y, &border) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rlllllll", &zconnection, &windowId, &parentId, &width, &height, &x, &y, &border) == FAILURE) {
 		return;
 	}
-	xcb_create_window(xconnection, XCB_COPY_FROM_PARENT, windowId, parentId, x, y, width, height, border, XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual, 0, NULL);
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
+	xcb_create_window(c->connection, XCB_COPY_FROM_PARENT, windowId, parentId, x, y, width, height, border, XCB_WINDOW_CLASS_INPUT_OUTPUT, c->screen->root_visual, 0, NULL);
 	RETURN_NULL();
 }
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_map_window, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_map_window) {
+	php_xcb_connection *c;
+	zval *zconnection;
 	int windowId;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &windowId) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &windowId) == FAILURE) {
 		return;
 	}
-	xcb_map_window(xconnection, (xcb_window_t) windowId);
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	xcb_map_window(c->connection, (xcb_window_t) windowId);
 	RETURN_NULL();
 }
 
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_flush, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_flush) {
-	xcb_flush(xconnection);
+	php_xcb_connection *c;
+	zval *zconnection;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zconnection) == FAILURE) {
+		return;
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
+	xcb_flush(c->connection);
 	RETURN_NULL();
 }
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_unmap_window, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_unmap_window) {
 	int windowId;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &windowId) == FAILURE) {
+	php_xcb_connection *c;
+	zval *zconnection;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &windowId) == FAILURE) {
 		return;
 	}
-	xcb_unmap_window(xconnection, (xcb_window_t) windowId);
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
+	xcb_unmap_window(c->connection, (xcb_window_t) windowId);
 	RETURN_NULL();
 }
 
@@ -300,10 +385,10 @@ void zval_to_mask(zval* mask, uint32_t* retPtr) {
 			temp = **data;
 			zval_copy_ctor(&temp);
 			if (realmask == 0) {
-				php_printf("adding mask: %d \n", (int) Z_LVAL(temp));
+				//php_printf("adding mask: %d \n", (int) Z_LVAL(temp));
 				realmask = (uint32_t) Z_LVAL(temp);
 			} else {
-				php_printf("adding mask: %d \n", (int) Z_LVAL(temp));
+				//php_printf("adding mask: %d \n", (int) Z_LVAL(temp));
 				realmask |= (uint32_t) Z_LVAL(temp);
 			}
 		}
@@ -339,17 +424,28 @@ void zval_to_mask(zval* mask, uint32_t* retPtr) {
  //	return (const uint32_t) retval;
  }
  **/
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, arr_mask)
+		ZEND_ARG_INFO(0, arr_mask_values)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_configure_window) {
 	int windowId, i;
+	php_xcb_connection *c;
+	zval *zconnection;
 	zval *zmask, *zvals, **data;
 	uint32_t intMask;
 	uint32_t* intVals;
 	HashTable* val_hash;
 	HashPosition pointer;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "laa", &windowId, &zmask, &zvals) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rlaa", &zconnection, &windowId, &zmask, &zvals) == FAILURE) {
 		return;
 	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
 	//convert the mask;
 	zval_to_mask(zmask, &intMask);
 
@@ -373,111 +469,197 @@ PHP_FUNCTION( xcb_configure_window) {
 	}
 
 	//php_printf("xcb_configure_window mask value: %d  \n", intMask);
-	xcb_configure_window(xconnection, (xcb_window_t) windowId, intMask, (const uint32_t *) retval);
+	xcb_configure_window(c->connection, (xcb_window_t) windowId, intMask, (const uint32_t *) retval);
 	RETURN_NULL();
 }
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_events, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, arr_mask_values)
+ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_configure_window_events) {
 	int windowId;
 	zval *zvals;
+	php_xcb_connection *c;
+	zval *zconnection;
 	uint32_t values[1];
 	xcb_void_cookie_t cookie;
 	xcb_generic_error_t *error;
 	uint32_t intMask;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "la", &windowId, &zvals) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rla", &zconnection, &windowId, &zvals) == FAILURE) {
 		return;
 	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 	zval_to_mask(zvals, &intMask);
 	values[0] = intMask;
 	//php_printf("our mask value: %d or intMask: %d \n", values[0], intMask);
 	//	php_printf("their values: %d \n", XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY);
-	cookie = xcb_change_window_attributes_checked(xconnection, (xcb_window_t) windowId, XCB_CW_EVENT_MASK, values);
-	error = xcb_request_check(xconnection, cookie);
+	cookie = xcb_change_window_attributes_checked(c->connection, (xcb_window_t) windowId, XCB_CW_EVENT_MASK, values);
+	error = xcb_request_check(c->connection, cookie);
 	//TODO: raise an error
 	RETURN_NULL();
 }
 
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_events_root, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_configure_window_events_root) {
+	//TODO:  Remove this now that masks are working properly
 	int windowId;
 	uint32_t values[1];
+	php_xcb_connection *c;
+	zval *zconnection;
 	xcb_void_cookie_t cookie;
 	xcb_generic_error_t *error;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &windowId) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &windowId) == FAILURE) {
 		return;
 	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
 	values[0] = XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY;
-	cookie = xcb_change_window_attributes_checked(xconnection, (xcb_window_t) windowId, XCB_CW_EVENT_MASK, values);
-	error = xcb_request_check(xconnection, cookie);
+	cookie = xcb_change_window_attributes_checked(c->connection, (xcb_window_t) windowId, XCB_CW_EVENT_MASK, values);
+	error = xcb_request_check(c->connection, cookie);
 	//TODO: raise an error
 	RETURN_NULL();
 }
 
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_border, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, border_width)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_configure_window_border) {
+	php_xcb_connection *c;
+	zval *zconnection;
 	int windowId, width;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ll", &windowId, &width) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rll", &zconnection, &windowId, &width) == FAILURE) {
 		return;
 	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 	const uint32_t values[] = { width };
-	xcb_configure_window(xconnection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_BORDER_WIDTH, values);
+	xcb_configure_window(c->connection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_BORDER_WIDTH, values);
 	RETURN_NULL();
 }
 
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_size, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, width)
+		ZEND_ARG_INFO(0, height)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_configure_window_size) {
+	php_xcb_connection *c;
+	zval *zconnection;
 	int windowId, width, height;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lll", &windowId, &width, &height) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rlll", &zconnection, &windowId, &width, &height) == FAILURE) {
 		return;
 	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 	const uint32_t values[] = { width, height };
-	xcb_configure_window(xconnection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, values);
+	xcb_configure_window(c->connection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, values);
 	RETURN_NULL();
 }
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_pos, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, x)
+		ZEND_ARG_INFO(0, y)
+ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_configure_window_pos) {
 	int windowId, x, y;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lll", &windowId, &x, &y) == FAILURE) {
+	php_xcb_connection *c;
+	zval *zconnection;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rlll", &zconnection, &windowId, &x, &y) == FAILURE) {
 		return;
 	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 	const uint32_t values[] = { x, y };
-	xcb_configure_window(xconnection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, values);
+	xcb_configure_window(c->connection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, values);
 	RETURN_NULL();
 }
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_raise, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_configure_window_raise) {
 	int windowId;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &windowId) == FAILURE) {
+	php_xcb_connection *c;
+	zval *zconnection;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &windowId) == FAILURE) {
 		return;
 	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 	uint32_t values[] = { XCB_STACK_MODE_ABOVE };
-	xcb_configure_window(xconnection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_STACK_MODE, values);
+	xcb_configure_window(c->connection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_STACK_MODE, values);
 	RETURN_NULL();
 }
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_lower, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_configure_window_lower) {
+	php_xcb_connection *c;
+	zval *zconnection;
 	int windowId;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &windowId) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &windowId) == FAILURE) {
 		return;
 	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 	uint32_t values[] = { XCB_STACK_MODE_BELOW };
-	xcb_configure_window(xconnection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_STACK_MODE, values);
+	xcb_configure_window(c->connection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_STACK_MODE, values);
 	RETURN_NULL();
 }
 
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_reparent_window, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, new_parent_id)
+		ZEND_ARG_INFO(0, x)
+		ZEND_ARG_INFO(0, y)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_reparent_window) {
+	php_xcb_connection *c;
+	zval *zconnection;
 	int windowId, newParentId, x, y;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "llll", &windowId, &newParentId, &x, &y) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rllll",&zconnection, &windowId, &newParentId, &x, &y) == FAILURE) {
 		return;
 	}
-	xcb_reparent_window(xconnection, (xcb_window_t) windowId, (xcb_window_t) newParentId, x, y);
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
+	xcb_reparent_window(c->connection, (xcb_window_t) windowId, (xcb_window_t) newParentId, x, y);
 RETURN_NULL()
 }
 
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_get_geometry, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_get_geometry) {
+	php_xcb_connection *c;
+	zval *zconnection;
 	int windowId;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &windowId) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &windowId) == FAILURE) {
 		return;
 	}
-	xcb_get_geometry_reply_t* geom = xcb_get_geometry_reply(xconnection, xcb_get_geometry(xconnection, (xcb_drawable_t) windowId), NULL);
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
+	xcb_get_geometry_reply_t* geom = xcb_get_geometry_reply(c->connection, xcb_get_geometry(c->connection, (xcb_drawable_t) windowId), NULL);
 	array_init(return_value);
 	add_assoc_long(return_value, "depth", geom->depth);
 	add_assoc_long(return_value, "root", geom->root);
@@ -488,14 +670,23 @@ PHP_FUNCTION( xcb_get_geometry) {
 	add_assoc_long(return_value, "border_width", geom->border_width);
 }
 
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_query_tree, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_query_tree) {
+	php_xcb_connection *c;
+	zval *zconnection;
 	int windowId, len, i;
 	xcb_window_t *children;
 	xcb_query_tree_reply_t *reply;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &windowId) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &windowId) == FAILURE) {
 		return;
 	}
-	reply = xcb_query_tree_reply(xconnection, xcb_query_tree(xconnection, windowId), 0);
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
+	reply = xcb_query_tree_reply(c->connection, xcb_query_tree(c->connection, windowId), 0);
 	len = xcb_query_tree_children_length(reply);
 	children = xcb_query_tree_children(reply);
 	array_init(return_value);
@@ -503,12 +694,22 @@ PHP_FUNCTION( xcb_query_tree) {
 		add_next_index_long(return_value, (int) children[i]);
 	}
 }
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_destroy_window, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_destroy_window) {
+	php_xcb_connection *c;
+	zval *zconnection;
 	int windowId;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &windowId) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &windowId) == FAILURE) {
 		return;
 	}
-	xcb_destroy_window(xconnection, windowId);
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
+	xcb_destroy_window(c->connection, windowId);
 	RETURN_NULL();
 }
 PHP_FUNCTION( test_mask) {
@@ -520,9 +721,20 @@ PHP_FUNCTION( test_mask) {
 	////	RETURN_LONG()
 }
 
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_list_extensions, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_list_extensions) {
-	xcb_list_extensions_cookie_t cookie = xcb_list_extensions(xconnection);
-	xcb_list_extensions_reply_t *r = xcb_list_extensions_reply(xconnection, cookie, NULL);
+	php_xcb_connection *c;
+	zval *zconnection;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zconnection) == FAILURE) {
+		return;
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
+	xcb_list_extensions_cookie_t cookie = xcb_list_extensions(c->connection);
+	xcb_list_extensions_reply_t *r = xcb_list_extensions_reply(c->connection, cookie, NULL);
 	int i = xcb_list_extensions_names_length(r);
 	xcb_str_iterator_t iter = xcb_list_extensions_names_iterator(r);
 	array_init(return_value);
@@ -537,12 +749,28 @@ PHP_FUNCTION( xcb_list_extensions) {
 	}
 	free(r);
 }
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_query_extension, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, extension_name)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_query_extension) {
+	//TODO: Something is segfaulting here, dont use!
+	php_xcb_connection *c;
+	zval *zconnection;
 	char* name;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &name) == FAILURE) {
+	int namelen;
+	xcb_generic_error_t *error;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rs", &zconnection, &name, &namelen) == FAILURE) {
 		return;
 	}
-	xcb_query_extension_reply_t *rep = xcb_query_extension_reply(xconnection, xcb_query_extension(xconnection, strlen(name), name), NULL);
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	xcb_query_extension_reply_t *rep = xcb_query_extension_reply(c->connection, xcb_query_extension(c->connection, namelen, name), &error);
+	if (NULL != error) {
+		php_printf("Unable to query extension %s\n", name);
+		RETURN_LONG(0);
+	}
 	array_init(return_value);
 	add_assoc_long(return_value, "present", rep->present);
 	add_assoc_long(return_value, "major_opcode", rep->major_opcode);
@@ -550,23 +778,57 @@ PHP_FUNCTION( xcb_query_extension) {
 	add_assoc_long(return_value, "first_error", rep->first_error);
 }
 
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_get_default_colormap, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_get_default_colormap) {
-	RETURN_LONG(screen->default_colormap);
+	php_xcb_connection *c;
+	zval *zconnection;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zconnection) == FAILURE) {
+		return;
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
+	RETURN_LONG(c->screen->default_colormap);
 }
 
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_create_colormap, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, colormap_id)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_create_colormap) {
+	php_xcb_connection *c;
+	zval *zconnection;
 	int mapId, windowId;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ll", &mapId, &windowId) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rll", &zconnection, &mapId, &windowId) == FAILURE) {
 		return;
 	}
-	xcb_create_colormap(xconnection, XCB_COLORMAP_ALLOC_NONE, mapId, windowId, screen->root_visual);
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
+	xcb_create_colormap(c->connection, XCB_COLORMAP_ALLOC_NONE, mapId, windowId, c->screen->root_visual);
 	RETURN_NULL();
 }
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_alloc_color, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, colormap_id)
+		ZEND_ARG_INFO(0, red)
+		ZEND_ARG_INFO(0, green)
+		ZEND_ARG_INFO(0, blue)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_alloc_color) {
+	php_xcb_connection *c;
+	zval *zconnection;
 	int mapId, red, blue, green;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "llll", &mapId,  &red, &blue, &green) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rllll", &zconnection, &mapId,  &red, &blue, &green) == FAILURE) {
 		return;
 	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
 	//	// copy
 	//	if (!xcb_aux_parse_color(name, &red, &green, &blue)) {
 	//		xcb_lookup_color_cookie_t c = xcb_lookup_color(xconnection, mapId, 3, name);
@@ -585,17 +847,28 @@ PHP_FUNCTION( xcb_alloc_color) {
 	//		free(r);
 	//	}
 	// end copy
-	xcb_alloc_color_reply_t *reply = xcb_alloc_color_reply(xconnection, xcb_alloc_color(xconnection, mapId, red, blue, green), NULL);
+	xcb_alloc_color_reply_t *reply = xcb_alloc_color_reply(c->connection, xcb_alloc_color(c->connection, mapId, red, blue, green), NULL);
 	RETURN_LONG(reply->pixel);
 }
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_alloc_named_color, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, colormap_id)
+		ZEND_ARG_INFO(0, color_name)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_alloc_named_color) {
+	php_xcb_connection *c;
+	zval *zconnection;
 	char* colstr;
-	int mapId;
+	int mapId, colstrlen;
 	xcb_generic_error_t *error;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ls", &mapId,  &colstr) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rls", &zconnection, &mapId,  &colstr, &colstrlen) == FAILURE) {
 		return;
 	}
-	xcb_alloc_named_color_reply_t *col_reply = xcb_alloc_named_color_reply(xconnection, xcb_alloc_named_color(xconnection, (xcb_colormap_t) mapId, strlen(colstr), colstr), &error);
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
+	xcb_alloc_named_color_reply_t *col_reply = xcb_alloc_named_color_reply(c->connection, xcb_alloc_named_color(c->connection, (xcb_colormap_t) mapId, colstrlen, colstr), &error);
 	if (NULL != error) {
 		php_printf("Unable to allocate color %s\n", colstr);
 		RETURN_LONG(0);
@@ -603,15 +876,29 @@ PHP_FUNCTION( xcb_alloc_named_color) {
 
 	RETURN_LONG(col_reply->pixel);
 }
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_create_gc, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, gc_id)
+		ZEND_ARG_INFO(0, arr_mask)
+		ZEND_ARG_INFO(0, arr_vals)
+ZEND_END_ARG_INFO();
+
+
 PHP_FUNCTION( xcb_create_gc) {
+	php_xcb_connection *c;
+	zval *zconnection;
 	int windowId, gcId, i;
 	zval *zmask, *zvals, **data;
 	HashTable* val_hash;
 	HashPosition pointer;
 	uint32_t intMask;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "llaa", &windowId, &gcId, &zmask, &zvals) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rllaa", &zconnection, &windowId, &gcId, &zmask, &zvals) == FAILURE) {
 		return;
 	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
 	zval_to_mask(zmask, &intMask);
 
 	val_hash = Z_ARRVAL_P(zvals);
@@ -625,26 +912,40 @@ PHP_FUNCTION( xcb_create_gc) {
 			temp = **data;
 			zval_copy_ctor(&temp);
 			val = Z_LVAL(temp);
-			php_printf("Adding %d to array at possition %d \n", val, i);
+			//php_printf("Adding %d to array at possition %d \n", val, i);
 			retval[i] = (uint32_t) val;
 			i++;
 		} else {
-			php_printf("unknown type");
+			//php_printf("unknown type");
 		}
 	}
 	//    uint32_t        values[3]  = {screen->black_pixel, 0, screen->black_pixel};
-	xcb_create_gc(xconnection, gcId, windowId, intMask, (const uint32_t *) retval);
+	xcb_create_gc(c->connection, gcId, windowId, intMask, (const uint32_t *) retval);
 	RETURN_NULL();
 }
 
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_poly_fill_rectangle, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, gc_id)
+		ZEND_ARG_INFO(0, x1)
+		ZEND_ARG_INFO(0, y1)
+		ZEND_ARG_INFO(0, x2)
+		ZEND_ARG_INFO(0, y2)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_poly_fill_rectangle) {
+	php_xcb_connection *c;
+	zval *zconnection;
 	int windowId, gcId, x1, y1, x2, y2;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "llllll", &windowId, &gcId, &x1, &y1, &x2, &y2) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rllllll", &zconnection, &windowId, &gcId, &x1, &y1, &x2, &y2) == FAILURE) {
 		return;
 	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
 	xcb_rectangle_t rectangles[] = { { x1, y1, x2, y2 } };
-	xcb_poly_fill_rectangle(xconnection, windowId, gcId, 1, rectangles);
-	xcb_flush(xconnection);
+	xcb_poly_fill_rectangle(c->connection, windowId, gcId, 1, rectangles);
+	//xcb_flush(c->connection);
 }
 
 event_xcb_button_press(xcb_generic_event_t* evt, zval* return_value) {
@@ -862,9 +1163,22 @@ event_error(xcb_generic_event_t* evt, zval* return_value) {
 	add_assoc_long(return_value, "error_code", e->error_code);
 	add_assoc_string(return_value, "url", "http://xcb.freedesktop.org/XcbUtil/api/group__xcb____event__t.html", 0);
 }
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_wait_for_event, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+ZEND_END_ARG_INFO();
+
 PHP_FUNCTION( xcb_wait_for_event) {
+	php_xcb_connection *c;
+	zval *zconnection;
 	xcb_generic_event_t *evt;
-	evt = xcb_wait_for_event(xconnection);
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zconnection) == FAILURE) {
+		return;
+	}
+
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
+	evt = xcb_wait_for_event(c->connection);
 	if (xcb_event_get_label(evt->response_type)) {
 		php_printf("php_xcb: event %s \n", (char*) xcb_event_get_label(evt->response_type));
 		array_init(return_value);

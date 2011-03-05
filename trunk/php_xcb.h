@@ -17,7 +17,7 @@
 */
 
 /* $Id: header 297205 2010-03-30 21:09:07Z johannes $ */
-
+#include <xcb/xcb.h>
 #ifndef PHP_XCB_H
 #define PHP_XCB_H
 
@@ -35,6 +35,14 @@ extern zend_module_entry xcb_module_entry;
 #ifdef ZTS
 #include "TSRM.h"
 #endif
+
+typedef struct _php_xcb_connection {
+	xcb_connection_t *connection;
+	xcb_screen_t *screen;
+} php_xcb_connection;
+
+#define PHP_XCB_CONNECTION_RES_NAME "XCB CONNECTION"
+
 
 PHP_MINIT_FUNCTION(xcb);
 PHP_MSHUTDOWN_FUNCTION(xcb);
