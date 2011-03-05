@@ -367,7 +367,7 @@ PHP_FUNCTION( xcb_init) {
 }
 /* }}} */
 
-/* {{{ proto int xcb_root_width_in_pixels([res connection])
+/* {{{ proto int xcb_root_width_in_pixels(res connection)
 	    Returns the width of the root window */
 PHP_FUNCTION( xcb_root_width_in_pixels) {
 	php_xcb_connection *c;
@@ -383,6 +383,9 @@ PHP_FUNCTION( xcb_root_width_in_pixels) {
 	}
 }
 /* }}} */
+
+/* {{{ proto int xcb_root_id(res connection)
+	    Returns the the root window id*/
 PHP_FUNCTION( xcb_root_id) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -397,9 +400,10 @@ PHP_FUNCTION( xcb_root_id) {
 		RETURN_LONG(0);
 	}
 }
+/* }}} */
 
-
-
+/* {{{ proto int xcb_root_height_in_pixels(res connection)
+	    Returns the the root window height*/
 PHP_FUNCTION( xcb_root_height_in_pixels) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -414,7 +418,10 @@ PHP_FUNCTION( xcb_root_height_in_pixels) {
 		RETURN_LONG(0);
 	}
 }
+/* }}} */
 
+/* {{{ proto int xcb_generate_id(res connection)
+	    Returns a new id needed to create a window or graphics context*/
 PHP_FUNCTION( xcb_generate_id) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -425,7 +432,10 @@ PHP_FUNCTION( xcb_generate_id) {
 	xcb_window_t newID = xcb_generate_id(c->connection);
 	RETURN_LONG(newID);
 }
+/* }}} */
 
+/* {{{ proto null xcb_create_window(res connection, int window_id, int parent_id, int width, int height, int x, int y, int border)
+	    Creates a new window on the x11 display*/
 PHP_FUNCTION( xcb_create_window) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -438,7 +448,10 @@ PHP_FUNCTION( xcb_create_window) {
 	xcb_create_window(c->connection, XCB_COPY_FROM_PARENT, windowId, parentId, x, y, width, height, border, XCB_WINDOW_CLASS_INPUT_OUTPUT, c->screen->root_visual, 0, NULL);
 	RETURN_NULL();
 }
+/* }}} */
 
+/* {{{ proto null xcb_map_window(res connection, int window_id)
+	    Displays an existing window on the screen*/
 PHP_FUNCTION( xcb_map_window) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -450,7 +463,10 @@ PHP_FUNCTION( xcb_map_window) {
 	xcb_map_window(c->connection, (xcb_window_t) windowId);
 	RETURN_NULL();
 }
+/* }}} */
 
+/* {{{ proto null xcb_flush(res connection)
+	    Flushes the connection*/
 PHP_FUNCTION( xcb_flush) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -462,7 +478,10 @@ PHP_FUNCTION( xcb_flush) {
 	xcb_flush(c->connection);
 	RETURN_NULL();
 }
+/* }}} */
 
+/* {{{ proto null xcb_unmap_window(res connection, int window_id)
+	    Removes a window from the screen, without destroying it*/
 PHP_FUNCTION( xcb_unmap_window) {
 	int windowId;
 	php_xcb_connection *c;
@@ -475,6 +494,7 @@ PHP_FUNCTION( xcb_unmap_window) {
 	xcb_unmap_window(c->connection, (xcb_window_t) windowId);
 	RETURN_NULL();
 }
+/* }}} */
 
 void zval_to_mask(zval* mask, uint32_t* retPtr) {
 	zval **data;
@@ -501,7 +521,10 @@ void zval_to_mask(zval* mask, uint32_t* retPtr) {
 	php_printf("final mask: %d \n", realmask);
 	*retPtr = realmask;
 }
+/* }}} */
 
+/* {{{ proto null xcb_configure_window(res connection, int window_id, arr mask, arr values)
+	    Apply any number of configurations to a window at once...  See xproto.h for valid mask values */
 PHP_FUNCTION( xcb_configure_window) {
 	int windowId, i;
 	php_xcb_connection *c;
@@ -543,7 +566,10 @@ PHP_FUNCTION( xcb_configure_window) {
 	xcb_configure_window(c->connection, (xcb_window_t) windowId, intMask, (const uint32_t *) retval);
 	RETURN_NULL();
 }
+/* }}} */
 
+/* {{{ proto null xcb_configure_window_events(res connection, int window_id, arr events)
+	    configure events on a window*/
 PHP_FUNCTION( xcb_configure_window_events) {
 	int windowId;
 	zval *zvals;
@@ -567,7 +593,10 @@ PHP_FUNCTION( xcb_configure_window_events) {
 	//TODO: raise an error
 	RETURN_NULL();
 }
+/* }}} */
 
+/* {{{ proto null xcb_configure_window_events_root(res connection, int window_id)
+	    apply a predefined set of events to a window **depreciated** */
 PHP_FUNCTION( xcb_configure_window_events_root) {
 	//TODO:  Remove this now that masks are working properly
 	int windowId;
@@ -588,7 +617,10 @@ PHP_FUNCTION( xcb_configure_window_events_root) {
 	//TODO: raise an error
 	RETURN_NULL();
 }
+/* }}} */
 
+/* {{{ proto null xcb_configure_window_border(res connection, int window_id, int border_width)
+	    set the border of a window */
 PHP_FUNCTION( xcb_configure_window_border) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -601,7 +633,10 @@ PHP_FUNCTION( xcb_configure_window_border) {
 	xcb_configure_window(c->connection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_BORDER_WIDTH, values);
 	RETURN_NULL();
 }
+/* }}} */
 
+/* {{{ proto null xcb_configure_window_size(res connection, int window_id, int width, int height)
+	    set the size of a window */
 PHP_FUNCTION( xcb_configure_window_size) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -614,7 +649,10 @@ PHP_FUNCTION( xcb_configure_window_size) {
 	xcb_configure_window(c->connection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, values);
 	RETURN_NULL();
 }
+/* }}} */
 
+/* {{{ proto null xcb_configure_window_pos(res connection, int window_id, int x, int y)
+	    set the position of a window */
 PHP_FUNCTION( xcb_configure_window_pos) {
 	int windowId, x, y;
 	php_xcb_connection *c;
@@ -627,7 +665,10 @@ PHP_FUNCTION( xcb_configure_window_pos) {
 	xcb_configure_window(c->connection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, values);
 	RETURN_NULL();
 }
+/* }}} */
 
+/* {{{ proto null xcb_configure_window_raise(res connection, int window_id)
+	    raise a window to the top of the stack */
 PHP_FUNCTION( xcb_configure_window_raise) {
 	int windowId;
 	php_xcb_connection *c;
@@ -640,7 +681,10 @@ PHP_FUNCTION( xcb_configure_window_raise) {
 	xcb_configure_window(c->connection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_STACK_MODE, values);
 	RETURN_NULL();
 }
+/* }}} */
 
+/* {{{ proto null xcb_configure_window_lower(res connection, int window_id)
+	    lower a window to the bottom of the stack */
 PHP_FUNCTION( xcb_configure_window_lower) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -653,7 +697,10 @@ PHP_FUNCTION( xcb_configure_window_lower) {
 	xcb_configure_window(c->connection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_STACK_MODE, values);
 	RETURN_NULL();
 }
+/* }}} */
 
+/* {{{ proto null xcb_reparent_window(res connection, int window_id, int new_parent_id, int x, int y)
+	    change a windows parent */
 PHP_FUNCTION( xcb_reparent_window) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -666,7 +713,10 @@ PHP_FUNCTION( xcb_reparent_window) {
 	xcb_reparent_window(c->connection, (xcb_window_t) windowId, (xcb_window_t) newParentId, x, y);
 RETURN_NULL()
 }
+/* }}} */
 
+/* {{{ proto arr xcb_get_geometry(res connection, int window_id)
+	    retrieve the geometry of a window. */
 PHP_FUNCTION( xcb_get_geometry) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -686,7 +736,10 @@ PHP_FUNCTION( xcb_get_geometry) {
 	add_assoc_long(return_value, "height", geom->height);
 	add_assoc_long(return_value, "border_width", geom->border_width);
 }
+/* }}} */
 
+/* {{{ proto arr xcb_query_tree(res connection, int window_id)
+	    retrieve the children of a window. */
 PHP_FUNCTION( xcb_query_tree) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -706,7 +759,10 @@ PHP_FUNCTION( xcb_query_tree) {
 		add_next_index_long(return_value, (int) children[i]);
 	}
 }
+/* }}} */
 
+/* {{{ proto arr xcb_destroy_window(res connection, int window_id)
+	    destroy a window. */
 PHP_FUNCTION( xcb_destroy_window) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -719,15 +775,10 @@ PHP_FUNCTION( xcb_destroy_window) {
 	xcb_destroy_window(c->connection, windowId);
 	RETURN_NULL();
 }
-PHP_FUNCTION( test_mask) {
-	//	uint32_t mask = 0;
-	//	uint32_t values[2];
-	//	mask = XCB_CW_EVENT_MASK;
-	//	values[0] = XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_ENTER_WINDOW
-	//			| XCB_EVENT_MASK_LEAVE_WINDOW | XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE;
-	////	RETURN_LONG()
-}
+/* }}} */
 
+/* {{{ proto arr xcb_list_extensions(res connection)
+	    list installed x11 extensions. */
 PHP_FUNCTION( xcb_list_extensions) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -752,7 +803,10 @@ PHP_FUNCTION( xcb_list_extensions) {
 	}
 	free(r);
 }
+/* }}} */
 
+/* {{{ proto arr xcb_query_extension(res connection, str name)
+	    get details on a named extension. */
 PHP_FUNCTION( xcb_query_extension) {
 	//TODO: Something is segfaulting here, dont use!
 	php_xcb_connection *c;
@@ -775,7 +829,10 @@ PHP_FUNCTION( xcb_query_extension) {
 	add_assoc_long(return_value, "first_event", rep->first_event);
 	add_assoc_long(return_value, "first_error", rep->first_error);
 }
+/* }}} */
 
+/* {{{ proto int xcb_get_default_colormap(res connection)
+	    get the colormap used by the root window. */
 PHP_FUNCTION( xcb_get_default_colormap) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -786,7 +843,10 @@ PHP_FUNCTION( xcb_get_default_colormap) {
 
 	RETURN_LONG(c->screen->default_colormap);
 }
+/* }}} */
 
+/* {{{ proto null xcb_create_colormap(res connection, int colormap_id, int window_id)
+	   	  create a new colormap. */
 PHP_FUNCTION( xcb_create_colormap) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -799,7 +859,10 @@ PHP_FUNCTION( xcb_create_colormap) {
 	xcb_create_colormap(c->connection, XCB_COLORMAP_ALLOC_NONE, mapId, windowId, c->screen->root_visual);
 	RETURN_NULL();
 }
+/* }}} */
 
+/* {{{ proto int xcb_alloc_color(res connection, int colormap_id, int red, int blue, int green)
+	   	  add a color to a colormap */
 PHP_FUNCTION( xcb_alloc_color) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -809,28 +872,13 @@ PHP_FUNCTION( xcb_alloc_color) {
 	}
 	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
-	//	// copy
-	//	if (!xcb_aux_parse_color(name, &red, &green, &blue)) {
-	//		xcb_lookup_color_cookie_t c = xcb_lookup_color(xconnection, mapId, 3, name);
-	//		xcb_lookup_color_reply_t *reply = xcb_lookup_color_reply(xconnection, c, NULL);
-	//		red = reply->exact_red;
-	//		green = reply->exact_green;
-	//		blue = reply->exact_blue;
-	//		free(reply);
-	//	} else {
-	//		xcb_alloc_color_cookie_t c = xcb_alloc_color(xconnection, mapId, red, green, blue);
-	//		xcb_alloc_color_reply_t *r = xcb_alloc_color_reply(xconnection, c, NULL);
-	//		red = r->red;
-	//		green = r->green;
-	//		blue = r->blue;
-	//		pixel = r->pixel;
-	//		free(r);
-	//	}
-	// end copy
 	xcb_alloc_color_reply_t *reply = xcb_alloc_color_reply(c->connection, xcb_alloc_color(c->connection, mapId, red, blue, green), NULL);
 	RETURN_LONG(reply->pixel);
 }
+/* }}} */
 
+/* {{{ proto int xcb_alloc_named_color(res connection, int colormap_id, str name)
+	   	  add a color to a colormap by name */
 PHP_FUNCTION( xcb_alloc_named_color) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -850,7 +898,10 @@ PHP_FUNCTION( xcb_alloc_named_color) {
 
 	RETURN_LONG(col_reply->pixel);
 }
+/* }}} */
 
+/* {{{ proto null xcb_create_gc(res connection, int window_id, int graphic_context_id, arr masks, arr values)
+	   	  create a new graphics context */
 PHP_FUNCTION( xcb_create_gc) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -888,7 +939,10 @@ PHP_FUNCTION( xcb_create_gc) {
 	xcb_create_gc(c->connection, gcId, windowId, intMask, (const uint32_t *) retval);
 	RETURN_NULL();
 }
+/* }}} */
 
+/* {{{ proto null xcb_create_gc(res connection, int window_id, int graphic_context_id, int x1, int y1, int x2, int y2)
+	   	  draw a rectangle*/
 PHP_FUNCTION( xcb_poly_fill_rectangle) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -902,7 +956,7 @@ PHP_FUNCTION( xcb_poly_fill_rectangle) {
 	xcb_poly_fill_rectangle(c->connection, windowId, gcId, 1, rectangles);
 	//xcb_flush(c->connection);
 }
-
+/* }}} */
 event_xcb_button_press(xcb_generic_event_t* evt, zval* return_value) {
 	xcb_button_press_event_t *e = (xcb_button_press_event_t *) evt;
 	add_assoc_long(return_value, "detail", e->detail);
@@ -1118,7 +1172,8 @@ event_error(xcb_generic_event_t* evt, zval* return_value) {
 	add_assoc_long(return_value, "error_code", e->error_code);
 	add_assoc_string(return_value, "url", "http://xcb.freedesktop.org/XcbUtil/api/group__xcb____event__t.html", 0);
 }
-
+/* {{{ proto arr xcb_wait_for_event(res connection)
+	   	  block untill an event is recieved*/
 PHP_FUNCTION( xcb_wait_for_event) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -1210,3 +1265,4 @@ PHP_FUNCTION( xcb_wait_for_event) {
 		}
 	}
 }
+/* }}} */
