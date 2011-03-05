@@ -34,41 +34,215 @@ ZEND_DECLARE_MODULE_GLOBALS( xcb)
 /* True global resources - no need for thread safety here */
 static int le_xcb;
 
+/* {{{ arginfo */
+ZEND_BEGIN_ARG_INFO_EX(arginfo_xcb_init, 0, 0, 0)
+		ZEND_ARG_INFO(0, displaynum)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_root_width_in_pixels, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_root_id, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_root_height_in_pixels, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_generate_id, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_create_window, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, parent_window_id)
+		ZEND_ARG_INFO(0, width)
+		ZEND_ARG_INFO(0, height)
+		ZEND_ARG_INFO(0, x)
+		ZEND_ARG_INFO(0, y)
+		ZEND_ARG_INFO(0, border_width)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_map_window, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_flush, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_unmap_window, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, arr_mask)
+		ZEND_ARG_INFO(0, arr_mask_values)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_events, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, arr_mask_values)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_events_root, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_border, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, border_width)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_size, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, width)
+		ZEND_ARG_INFO(0, height)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_pos, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, x)
+		ZEND_ARG_INFO(0, y)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_raise, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_lower, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_reparent_window, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, new_parent_id)
+		ZEND_ARG_INFO(0, x)
+		ZEND_ARG_INFO(0, y)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_get_geometry, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_query_tree, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_destroy_window, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_list_extensions, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_query_extension, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, extension_name)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_get_default_colormap, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_create_colormap, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, colormap_id)
+ZEND_END_ARG_INFO();
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_alloc_color, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, colormap_id)
+		ZEND_ARG_INFO(0, red)
+		ZEND_ARG_INFO(0, green)
+		ZEND_ARG_INFO(0, blue)
+ZEND_END_ARG_INFO();
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_alloc_named_color, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, colormap_id)
+		ZEND_ARG_INFO(0, color_name)
+ZEND_END_ARG_INFO();
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_create_gc, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, gc_id)
+		ZEND_ARG_INFO(0, arr_mask)
+		ZEND_ARG_INFO(0, arr_vals)
+ZEND_END_ARG_INFO();
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_poly_fill_rectangle, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+		ZEND_ARG_INFO(0, window_id)
+		ZEND_ARG_INFO(0, gc_id)
+		ZEND_ARG_INFO(0, x1)
+		ZEND_ARG_INFO(0, y1)
+		ZEND_ARG_INFO(0, x2)
+		ZEND_ARG_INFO(0, y2)
+ZEND_END_ARG_INFO();
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_wait_for_event, 0)
+		ZEND_ARG_INFO(0, xcb_resource)
+ZEND_END_ARG_INFO();
+/* }}} */
+
+
 /* {{{ xcb_functions[]
  *
  * Every user visible function must have an entry in xcb_functions[].
  */
 const zend_function_entry xcb_functions[] = {
-	PHP_FE(xcb_init, NULL)
-	PHP_FE(xcb_root_id, NULL)
-	PHP_FE(xcb_root_width_in_pixels, NULL)
-	PHP_FE(xcb_root_height_in_pixels, NULL)
-	PHP_FE(xcb_generate_id, NULL)
-	PHP_FE(xcb_create_window, NULL)
-	PHP_FE(xcb_map_window, NULL)
-	PHP_FE(xcb_flush, NULL)
-	PHP_FE(xcb_unmap_window, NULL)
-	PHP_FE(xcb_configure_window, NULL)
-	PHP_FE(xcb_configure_window_border, NULL)
-	PHP_FE(xcb_configure_window_size, NULL)
-	PHP_FE(xcb_configure_window_pos, NULL)
-	PHP_FE(xcb_configure_window_lower, NULL)
-	PHP_FE(xcb_configure_window_raise, NULL)
-	PHP_FE(xcb_configure_window_events, NULL)
-	PHP_FE(xcb_configure_window_events_root, NULL)
-	PHP_FE(xcb_reparent_window, NULL)
-	PHP_FE(xcb_get_geometry, NULL)
-	PHP_FE(xcb_query_tree, NULL)
-	PHP_FE(xcb_wait_for_event, NULL)
-	PHP_FE(xcb_destroy_window, NULL)
-	PHP_FE(xcb_list_extensions, NULL)
-	PHP_FE(xcb_query_extension, NULL)
-	PHP_FE(xcb_get_default_colormap, NULL)
-	PHP_FE(xcb_create_colormap, NULL)
-	PHP_FE(xcb_alloc_color, NULL)
-	PHP_FE(xcb_create_gc, NULL)
-	PHP_FE(xcb_poly_fill_rectangle, NULL)
-	PHP_FE(xcb_alloc_named_color, NULL)
+	PHP_FE(xcb_init, arginfo_xcb_init)
+	PHP_FE(xcb_root_id, arginfo_xcb_root_id)
+	PHP_FE(xcb_root_width_in_pixels, arginfo_xcb_root_width_in_pixels)
+	PHP_FE(xcb_root_height_in_pixels, arginfo_xcb_root_height_in_pixels)
+	PHP_FE(xcb_generate_id, arginfo_xcb_generate_id)
+	PHP_FE(xcb_create_window, arginfo_xcb_create_window)
+	PHP_FE(xcb_map_window, arginfo_xcb_map_window)
+	PHP_FE(xcb_flush, arginfo_xcb_flush)
+	PHP_FE(xcb_unmap_window, arginfo_xcb_unmap_window)
+	PHP_FE(xcb_configure_window, arginfo_xcb_configure_window)
+	PHP_FE(xcb_configure_window_border, arginfo_xcb_configure_window_border)
+	PHP_FE(xcb_configure_window_size, arginfo_xcb_configure_window_size)
+	PHP_FE(xcb_configure_window_pos, arginfo_xcb_configure_window_pos)
+	PHP_FE(xcb_configure_window_lower, arginfo_xcb_configure_window_lower)
+	PHP_FE(xcb_configure_window_raise, arginfo_xcb_configure_window_raise)
+	PHP_FE(xcb_configure_window_events, arginfo_xcb_configure_window_events)
+	PHP_FE(xcb_configure_window_events_root, arginfo_xcb_configure_window_events_root)
+	PHP_FE(xcb_reparent_window, arginfo_xcb_reparent_window)
+	PHP_FE(xcb_get_geometry, arginfo_xcb_get_geometry)
+	PHP_FE(xcb_query_tree, arginfo_xcb_query_tree)
+	PHP_FE(xcb_wait_for_event, arginfo_xcb_wait_for_event)
+	PHP_FE(xcb_destroy_window, arginfo_xcb_destroy_window)
+	PHP_FE(xcb_list_extensions, arginfo_xcb_list_extensions)
+	PHP_FE(xcb_query_extension, arginfo_xcb_query_extension)
+	PHP_FE(xcb_get_default_colormap, arginfo_xcb_get_default_colormap)
+	PHP_FE(xcb_create_colormap, arginfo_xcb_create_colormap)
+	PHP_FE(xcb_alloc_color, arginfo_xcb_alloc_color)
+	PHP_FE(xcb_create_gc, arginfo_xcb_create_gc)
+	PHP_FE(xcb_poly_fill_rectangle, arginfo_xcb_poly_fill_rectangle)
+	PHP_FE(xcb_alloc_named_color, arginfo_xcb_alloc_named_color)
 	{	NULL, NULL, NULL} /* Must be the last line in xcb_functions[] */
 };
 /* }}} */
@@ -160,54 +334,20 @@ PHP_MINFO_FUNCTION( xcb) {
 	php_info_print_table_start();
 	php_info_print_table_header(2, "xcb support", "enabled");
 	php_info_print_table_end();
-
-	/* Remove comments if you have entries in php.ini
-	 DISPLAY_INI_ENTRIES();
-	 */
 }
 /* }}} */
 
-//int parseMaskString(char* mask){
-//    XCB_EVENT_MASK_BUTTON_RELEASE = 8,
-//    XCB_EVENT_MASK_ENTER_WINDOW = 16,
-//    XCB_EVENT_MASK_LEAVE_WINDOW = 32,
-//    XCB_EVENT_MASK_POINTER_MOTION = 64,
-//    XCB_EVENT_MASK_POINTER_MOTION_HINT = 128,
-//    XCB_EVENT_MASK_BUTTON_1_MOTION = 256,
-//    XCB_EVENT_MASK_BUTTON_2_MOTION = 512,
-//    XCB_EVENT_MASK_BUTTON_3_MOTION = 1024,
-//    XCB_EVENT_MASK_BUTTON_4_MOTION = 2048,
-//    XCB_EVENT_MASK_BUTTON_5_MOTION = 4096,
-//    XCB_EVENT_MASK_BUTTON_MOTION = 8192,
-//    XCB_EVENT_MASK_KEYMAP_STATE = 16384,
-//    XCB_EVENT_MASK_EXPOSURE = 32768,
-//    XCB_EVENT_MASK_VISIBILITY_CHANGE = 65536,
-//    XCB_EVENT_MASK_STRUCTURE_NOTIFY = 131072,
-//    XCB_EVENT_MASK_RESIZE_REDIRECT = 262144,
-//    XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY = 524288,
-//    XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT = 1048576,
-//    XCB_EVENT_MASK_FOCUS_CHANGE = 2097152,
-//    XCB_EVENT_MASK_PROPERTY_CHANGE = 4194304,
-//    XCB_EVENT_MASK_COLOR_MAP_CHANGE = 8388608,
-//    XCB_EVENT_MASK_OWNER_GRAB_BUTTON = 16777216
-//
-//}
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_xcb_init, 0, 0, 0)
-		ZEND_ARG_INFO(0, displaynum)
-ZEND_END_ARG_INFO();
-
+/* {{{ proto res xcb_init([str display])
+	    Instanciates a connection with x11, and returns a resource pointer to it */
 PHP_FUNCTION( xcb_init) {
 	char *dispnum = NULL;
 	int dispnum_len;
-	xcb_connection_t *xconnection; // The connection to the X server.
-	xcb_screen_t *screen; //The active Screen
+	xcb_connection_t *xconnection;
+	xcb_screen_t *screen;
 	php_xcb_connection *c;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &dispnum, &dispnum_len) == SUCCESS) {
 		xconnection = xcb_connect(dispnum, NULL);
-		//		atom_desktop = xcb_atom_get(xconnection, "_NET_WM_DESKTOP");
-		//		wm_delete_window = xcb_atom_get(xconnection, "WM_DELETE_WINDOW");
-		//		wm_protocols = xcb_atom_get(xconnection, "WM_PROTOCOLS");
 	} else {
 		xconnection = xcb_connect(NULL, NULL);
 	}
@@ -225,10 +365,10 @@ PHP_FUNCTION( xcb_init) {
 		}
 	}
 }
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_root_width_in_pixels, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-ZEND_END_ARG_INFO();
+/* }}} */
 
+/* {{{ proto int xcb_root_width_in_pixels([res connection])
+	    Returns the width of the root window */
 PHP_FUNCTION( xcb_root_width_in_pixels) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -242,11 +382,7 @@ PHP_FUNCTION( xcb_root_width_in_pixels) {
 		RETURN_LONG(0);
 	}
 }
-
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_root_id, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-ZEND_END_ARG_INFO();
-
+/* }}} */
 PHP_FUNCTION( xcb_root_id) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -262,9 +398,7 @@ PHP_FUNCTION( xcb_root_id) {
 	}
 }
 
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_root_height_in_pixels, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-ZEND_END_ARG_INFO();
+
 
 PHP_FUNCTION( xcb_root_height_in_pixels) {
 	php_xcb_connection *c;
@@ -281,10 +415,6 @@ PHP_FUNCTION( xcb_root_height_in_pixels) {
 	}
 }
 
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_generate_id, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-ZEND_END_ARG_INFO();
-
 PHP_FUNCTION( xcb_generate_id) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -295,17 +425,6 @@ PHP_FUNCTION( xcb_generate_id) {
 	xcb_window_t newID = xcb_generate_id(c->connection);
 	RETURN_LONG(newID);
 }
-
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_create_window, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-		ZEND_ARG_INFO(0, parent_window_id)
-		ZEND_ARG_INFO(0, width)
-		ZEND_ARG_INFO(0, height)
-		ZEND_ARG_INFO(0, x)
-		ZEND_ARG_INFO(0, y)
-		ZEND_ARG_INFO(0, border_width)
-ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_create_window) {
 	php_xcb_connection *c;
@@ -320,11 +439,6 @@ PHP_FUNCTION( xcb_create_window) {
 	RETURN_NULL();
 }
 
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_map_window, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-ZEND_END_ARG_INFO();
-
 PHP_FUNCTION( xcb_map_window) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -337,10 +451,6 @@ PHP_FUNCTION( xcb_map_window) {
 	RETURN_NULL();
 }
 
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_flush, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-ZEND_END_ARG_INFO();
-
 PHP_FUNCTION( xcb_flush) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -352,11 +462,6 @@ PHP_FUNCTION( xcb_flush) {
 	xcb_flush(c->connection);
 	RETURN_NULL();
 }
-
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_unmap_window, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_unmap_window) {
 	int windowId;
@@ -396,40 +501,6 @@ void zval_to_mask(zval* mask, uint32_t* retPtr) {
 	php_printf("final mask: %d \n", realmask);
 	*retPtr = realmask;
 }
-/**
- void zval_to_uint32_tarr(zval* vals, uint32_t** retPtr) {
- zval **data;
- int i;
- HashTable* val_hash;
- HashPosition pointer;
- val_hash = Z_ARRVAL_P(vals);
- uint32_t retval[zend_hash_num_elements(val_hash)];
- i = 0;
- for (zend_hash_internal_pointer_reset_ex(val_hash, &pointer); zend_hash_get_current_data_ex(val_hash, (void**) &data, &pointer) == SUCCESS; zend_hash_move_forward_ex(val_hash,
- &pointer)) {
- if (Z_TYPE_PP(data) == IS_LONG) {
- zval temp;
- int val;
- temp = **data;
- zval_copy_ctor(&temp);
- val = Z_LVAL(temp);
- php_printf("Adding %d to array at possition %d \n", val, i);
- retval[i] = (uint32_t) val;
- i++;
- } else {
- php_printf("unknown type");
- }
- }
- retPtr =(const uint32_t*) retval;
- //	return (const uint32_t) retval;
- }
- **/
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-		ZEND_ARG_INFO(0, arr_mask)
-		ZEND_ARG_INFO(0, arr_mask_values)
-ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_configure_window) {
 	int windowId, i;
@@ -473,12 +544,6 @@ PHP_FUNCTION( xcb_configure_window) {
 	RETURN_NULL();
 }
 
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_events, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-		ZEND_ARG_INFO(0, arr_mask_values)
-ZEND_END_ARG_INFO();
-
 PHP_FUNCTION( xcb_configure_window_events) {
 	int windowId;
 	zval *zvals;
@@ -503,11 +568,6 @@ PHP_FUNCTION( xcb_configure_window_events) {
 	RETURN_NULL();
 }
 
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_events_root, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-ZEND_END_ARG_INFO();
-
 PHP_FUNCTION( xcb_configure_window_events_root) {
 	//TODO:  Remove this now that masks are working properly
 	int windowId;
@@ -529,12 +589,6 @@ PHP_FUNCTION( xcb_configure_window_events_root) {
 	RETURN_NULL();
 }
 
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_border, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-		ZEND_ARG_INFO(0, border_width)
-ZEND_END_ARG_INFO();
-
 PHP_FUNCTION( xcb_configure_window_border) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -547,13 +601,6 @@ PHP_FUNCTION( xcb_configure_window_border) {
 	xcb_configure_window(c->connection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_BORDER_WIDTH, values);
 	RETURN_NULL();
 }
-
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_size, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-		ZEND_ARG_INFO(0, width)
-		ZEND_ARG_INFO(0, height)
-ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_configure_window_size) {
 	php_xcb_connection *c;
@@ -568,13 +615,6 @@ PHP_FUNCTION( xcb_configure_window_size) {
 	RETURN_NULL();
 }
 
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_pos, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-		ZEND_ARG_INFO(0, x)
-		ZEND_ARG_INFO(0, y)
-ZEND_END_ARG_INFO();
-
 PHP_FUNCTION( xcb_configure_window_pos) {
 	int windowId, x, y;
 	php_xcb_connection *c;
@@ -587,11 +627,6 @@ PHP_FUNCTION( xcb_configure_window_pos) {
 	xcb_configure_window(c->connection, (xcb_window_t) windowId, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, values);
 	RETURN_NULL();
 }
-
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_raise, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_configure_window_raise) {
 	int windowId;
@@ -606,11 +641,6 @@ PHP_FUNCTION( xcb_configure_window_raise) {
 	RETURN_NULL();
 }
 
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_configure_window_lower, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-ZEND_END_ARG_INFO();
-
 PHP_FUNCTION( xcb_configure_window_lower) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -624,14 +654,6 @@ PHP_FUNCTION( xcb_configure_window_lower) {
 	RETURN_NULL();
 }
 
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_reparent_window, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-		ZEND_ARG_INFO(0, new_parent_id)
-		ZEND_ARG_INFO(0, x)
-		ZEND_ARG_INFO(0, y)
-ZEND_END_ARG_INFO();
-
 PHP_FUNCTION( xcb_reparent_window) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -644,11 +666,6 @@ PHP_FUNCTION( xcb_reparent_window) {
 	xcb_reparent_window(c->connection, (xcb_window_t) windowId, (xcb_window_t) newParentId, x, y);
 RETURN_NULL()
 }
-
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_get_geometry, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_get_geometry) {
 	php_xcb_connection *c;
@@ -670,11 +687,6 @@ PHP_FUNCTION( xcb_get_geometry) {
 	add_assoc_long(return_value, "border_width", geom->border_width);
 }
 
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_query_tree, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-ZEND_END_ARG_INFO();
-
 PHP_FUNCTION( xcb_query_tree) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -694,11 +706,6 @@ PHP_FUNCTION( xcb_query_tree) {
 		add_next_index_long(return_value, (int) children[i]);
 	}
 }
-
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_destroy_window, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_destroy_window) {
 	php_xcb_connection *c;
@@ -720,10 +727,6 @@ PHP_FUNCTION( test_mask) {
 	//			| XCB_EVENT_MASK_LEAVE_WINDOW | XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE;
 	////	RETURN_LONG()
 }
-
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_list_extensions, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_list_extensions) {
 	php_xcb_connection *c;
@@ -750,11 +753,6 @@ PHP_FUNCTION( xcb_list_extensions) {
 	free(r);
 }
 
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_query_extension, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, extension_name)
-ZEND_END_ARG_INFO();
-
 PHP_FUNCTION( xcb_query_extension) {
 	//TODO: Something is segfaulting here, dont use!
 	php_xcb_connection *c;
@@ -778,10 +776,6 @@ PHP_FUNCTION( xcb_query_extension) {
 	add_assoc_long(return_value, "first_error", rep->first_error);
 }
 
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_get_default_colormap, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-ZEND_END_ARG_INFO();
-
 PHP_FUNCTION( xcb_get_default_colormap) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -792,12 +786,6 @@ PHP_FUNCTION( xcb_get_default_colormap) {
 
 	RETURN_LONG(c->screen->default_colormap);
 }
-
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_create_colormap, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-		ZEND_ARG_INFO(0, colormap_id)
-ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_create_colormap) {
 	php_xcb_connection *c;
@@ -811,14 +799,6 @@ PHP_FUNCTION( xcb_create_colormap) {
 	xcb_create_colormap(c->connection, XCB_COLORMAP_ALLOC_NONE, mapId, windowId, c->screen->root_visual);
 	RETURN_NULL();
 }
-
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_alloc_color, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, colormap_id)
-		ZEND_ARG_INFO(0, red)
-		ZEND_ARG_INFO(0, green)
-		ZEND_ARG_INFO(0, blue)
-ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_alloc_color) {
 	php_xcb_connection *c;
@@ -851,12 +831,6 @@ PHP_FUNCTION( xcb_alloc_color) {
 	RETURN_LONG(reply->pixel);
 }
 
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_alloc_named_color, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, colormap_id)
-		ZEND_ARG_INFO(0, color_name)
-ZEND_END_ARG_INFO();
-
 PHP_FUNCTION( xcb_alloc_named_color) {
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -876,15 +850,6 @@ PHP_FUNCTION( xcb_alloc_named_color) {
 
 	RETURN_LONG(col_reply->pixel);
 }
-
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_create_gc, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-		ZEND_ARG_INFO(0, gc_id)
-		ZEND_ARG_INFO(0, arr_mask)
-		ZEND_ARG_INFO(0, arr_vals)
-ZEND_END_ARG_INFO();
-
 
 PHP_FUNCTION( xcb_create_gc) {
 	php_xcb_connection *c;
@@ -923,16 +888,6 @@ PHP_FUNCTION( xcb_create_gc) {
 	xcb_create_gc(c->connection, gcId, windowId, intMask, (const uint32_t *) retval);
 	RETURN_NULL();
 }
-
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_poly_fill_rectangle, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-		ZEND_ARG_INFO(0, window_id)
-		ZEND_ARG_INFO(0, gc_id)
-		ZEND_ARG_INFO(0, x1)
-		ZEND_ARG_INFO(0, y1)
-		ZEND_ARG_INFO(0, x2)
-		ZEND_ARG_INFO(0, y2)
-ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_poly_fill_rectangle) {
 	php_xcb_connection *c;
@@ -1163,10 +1118,6 @@ event_error(xcb_generic_event_t* evt, zval* return_value) {
 	add_assoc_long(return_value, "error_code", e->error_code);
 	add_assoc_string(return_value, "url", "http://xcb.freedesktop.org/XcbUtil/api/group__xcb____event__t.html", 0);
 }
-
-ZEND_BEGIN_ARG_INFO(arginfo_xcb_wait_for_event, 0)
-		ZEND_ARG_INFO(0, xcb_resource)
-ZEND_END_ARG_INFO();
 
 PHP_FUNCTION( xcb_wait_for_event) {
 	php_xcb_connection *c;
