@@ -709,11 +709,12 @@ PHP_FUNCTION( xcb_reparent_window) {
 	int windowId, newParentId, x, y;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rllll",&zconnection, &windowId, &newParentId, &x, &y) == FAILURE) {
 		return;
-	} ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
 	xcb_reparent_window(c->connection, (xcb_window_t) windowId,
 			(xcb_window_t) newParentId, x, y);
-RETURN_NULL()
+	RETURN_NULL()
 }
 /* }}} */
 
@@ -725,7 +726,8 @@ PHP_FUNCTION( xcb_get_geometry) {
 	int windowId;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &windowId) == FAILURE) {
 		return;
-	} ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
 	xcb_get_geometry_reply_t* geom = xcb_get_geometry_reply(c->connection,
 			xcb_get_geometry(c->connection, (xcb_drawable_t) windowId), NULL);
@@ -750,7 +752,8 @@ PHP_FUNCTION( xcb_query_tree) {
 	xcb_query_tree_reply_t *reply;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &windowId) == FAILURE) {
 		return;
-	} ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
 	reply = xcb_query_tree_reply(c->connection, xcb_query_tree(c->connection,
 			windowId), 0);
@@ -771,7 +774,8 @@ PHP_FUNCTION( xcb_destroy_window) {
 	int windowId;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &windowId) == FAILURE) {
 		return;
-	} ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
 	xcb_destroy_window(c->connection, windowId);
 	RETURN_NULL();
@@ -785,7 +789,8 @@ PHP_FUNCTION( xcb_list_extensions) {
 	zval *zconnection;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zconnection) == FAILURE) {
 		return;
-	} ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
 	xcb_list_extensions_cookie_t cookie = xcb_list_extensions(c->connection);
 	xcb_list_extensions_reply_t *r = xcb_list_extensions_reply(c->connection,
@@ -818,7 +823,8 @@ PHP_FUNCTION( xcb_query_extension) {
 	xcb_generic_error_t *error;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rs", &zconnection, &name, &namelen) == FAILURE) {
 		return;
-	} ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 	xcb_query_extension_reply_t *rep = xcb_query_extension_reply(c->connection,
 			xcb_query_extension(c->connection, namelen, name), &error);
 	if (NULL != error) {
@@ -855,7 +861,8 @@ PHP_FUNCTION( xcb_create_colormap) {
 	int mapId, windowId;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rll", &zconnection, &mapId, &windowId) == FAILURE) {
 		return;
-	} ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
 	xcb_create_colormap(c->connection, XCB_COLORMAP_ALLOC_NONE, mapId,
 			windowId, c->screen->root_visual);
@@ -871,7 +878,8 @@ PHP_FUNCTION( xcb_alloc_color) {
 	int mapId, red, blue, green;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rllll", &zconnection, &mapId,  &red, &blue, &green) == FAILURE) {
 		return;
-	} ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
 	xcb_alloc_color_reply_t *reply = xcb_alloc_color_reply(c->connection,
 			xcb_alloc_color(c->connection, mapId, red, blue, green), NULL);
@@ -1209,89 +1217,90 @@ PHP_FUNCTION( xcb_wait_for_event) {
 	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
 	if (evt = xcb_wait_for_event(c->connection)) {
-		if ((int) evt->response_type) {
-			php_printf("php_xcb: event %s \n", (char*) xcb_event_get_label(
-					evt->response_type));
-			array_init(return_value);
-			add_get_assoc_string_ex(return_value, "response_type", strlen(
-					"response_type") + 1, (const char *) xcb_event_get_label(
-					evt->response_type), NULL, 1);
-			switch (evt->response_type & ~0x80) {
-			case XCB_BUTTON_PRESS:
-				event_xcb_button_press(evt, return_value);
-				break;
-			case XCB_BUTTON_RELEASE:
-				event_xcb_button_release(evt, return_value);
-				break;
-			case XCB_KEY_PRESS:
-				event_xcb_key_press(evt, return_value);
-				break;
-			case XCB_KEY_RELEASE:
-				event_xcb_key_release(evt, return_value);
-				break;
-			case XCB_CONFIGURE_REQUEST:
-				event_xcb_configure_request(evt, return_value);
-				break;
-			case XCB_MAP_REQUEST:
-				event_xcb_map_request(evt, return_value);
-				break;
-			case XCB_CONFIGURE_NOTIFY:
-				event_xcb_configure_notify(evt, return_value);
-				break;
-			case XCB_CREATE_NOTIFY:
-				event_xcb_create_notify(evt, return_value);
-				break;
-			case XCB_MAP_NOTIFY:
-				event_xcb_map_notify(evt, return_value);
-				break;
-			case XCB_UNMAP_NOTIFY:
-				event_xcb_unmap_notify(evt, return_value);
-				break;
-			case XCB_DESTROY_NOTIFY:
-				event_xcb_destroy_notify(evt, return_value);
-				break;
-			case XCB_LEAVE_NOTIFY:
-				event_xcb_leave_notify(evt, return_value);
-				break;
-			case XCB_MOTION_NOTIFY:
-				event_xcb_motion_notify(evt, return_value);
-				break;
-			case XCB_ENTER_NOTIFY:
-				event_xcb_enter_notify(evt, return_value);
-				break;
-			case XCB_REPARENT_NOTIFY:
-				event_xcb_reparent_notify(evt, return_value);
-				break;
-			case XCB_EXPOSE:
-				event_xcb_expose(evt, return_value);
-				break;
-			case 0:
-				event_error(evt, return_value);
-				break;
-			default:
-				php_printf("php_xcb: Unknown Event '%s' Recieved\n",
-						(char*) xcb_event_get_label(evt->response_type));
-				break;
-			}
-		} else {
-			php_printf("php_xcb: Unknown Event type '%d' Recieved (%s) \n",
-					evt->response_type, (char*) xcb_event_get_label(
-							evt->response_type & 0x7f));
-			array_init(return_value);
-			add_assoc_long(return_value, "response_type", evt->response_type);
+		if (NULL != evt ){
+			if (evt->response_type && xcb_event_get_label(evt->response_type)) {
+				php_printf("php_xcb: event %s \n", (char*) xcb_event_get_label(evt->response_type));
+				array_init(return_value);
+				add_get_assoc_string_ex(return_value, "response_type", strlen(
+						"response_type") + 1, (const char *) xcb_event_get_label(
+						evt->response_type), NULL, 1);
+				switch (evt->response_type & ~0x80) {
+				case XCB_BUTTON_PRESS:
+					event_xcb_button_press(evt, return_value);
+					break;
+				case XCB_BUTTON_RELEASE:
+					event_xcb_button_release(evt, return_value);
+					break;
+				case XCB_KEY_PRESS:
+					event_xcb_key_press(evt, return_value);
+					break;
+				case XCB_KEY_RELEASE:
+					event_xcb_key_release(evt, return_value);
+					break;
+				case XCB_CONFIGURE_REQUEST:
+					event_xcb_configure_request(evt, return_value);
+					break;
+				case XCB_MAP_REQUEST:
+					event_xcb_map_request(evt, return_value);
+					break;
+				case XCB_CONFIGURE_NOTIFY:
+					event_xcb_configure_notify(evt, return_value);
+					break;
+				case XCB_CREATE_NOTIFY:
+					event_xcb_create_notify(evt, return_value);
+					break;
+				case XCB_MAP_NOTIFY:
+					event_xcb_map_notify(evt, return_value);
+					break;
+				case XCB_UNMAP_NOTIFY:
+					event_xcb_unmap_notify(evt, return_value);
+					break;
+				case XCB_DESTROY_NOTIFY:
+					event_xcb_destroy_notify(evt, return_value);
+					break;
+				case XCB_LEAVE_NOTIFY:
+					event_xcb_leave_notify(evt, return_value);
+					break;
+				case XCB_MOTION_NOTIFY:
+					event_xcb_motion_notify(evt, return_value);
+					break;
+				case XCB_ENTER_NOTIFY:
+					event_xcb_enter_notify(evt, return_value);
+					break;
+				case XCB_REPARENT_NOTIFY:
+					event_xcb_reparent_notify(evt, return_value);
+					break;
+				case XCB_EXPOSE:
+					event_xcb_expose(evt, return_value);
+					break;
+				case 0:
+					event_error(evt, return_value);
+					break;
+				default:
+					php_printf("php_xcb: Unknown Event '%s' Recieved\n",
+							(char*) xcb_event_get_label(evt->response_type));
+					break;
+				}
+			} else {
+				php_printf("php_xcb: Unknown Event type '%d' Recieved (%s) \n",
+						evt->response_type, (char*) xcb_event_get_label(
+								evt->response_type & 0x7f));
+				array_init(return_value);
+				add_assoc_long(return_value, "response_type", evt->response_type);
 
-			switch (evt->response_type) {
-			case 146:
-				event_generic(evt, return_value);
-				//add_assoc_long(return_value, "response_type", evt->first_event);
-				break;
-			case 150:
-				event_generic(evt, return_value);
-				//add_assoc_long(return_value, "response_type", evt->first_event);
-				break;
-			default:
-				event_generic(evt, return_value);
-				break;
+				switch (evt->response_type) {
+				case 146:
+					event_generic(evt, return_value);
+					//add_assoc_long(return_value, "response_type", evt->first_event);
+					break;
+				case 150:
+					event_generic(evt, return_value);
+					//add_assoc_long(return_value, "response_type", evt->first_event);
+					break;
+				default:
+					event_generic(evt, return_value);
+					break;
+				}
 			}
 		}
 	}
