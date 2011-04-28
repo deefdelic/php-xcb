@@ -84,15 +84,12 @@ PHP_FUNCTION(xcb_poly_fill_rectangle);
 //event_xcb_destroy_notify(xcb_generic_event_t, zval);
 //event_xcb_button_release(xcb_generic_event_t, zval);
 //event_xcb_button_press(xcb_generic_event_t, zval);
-/* 
-  	Declare any global variables you may need between the BEGIN
-	and END macros here:     
 
 ZEND_BEGIN_MODULE_GLOBALS(xcb)
 	long  global_value;
 	char *global_string;
 ZEND_END_MODULE_GLOBALS(xcb)
-*/
+
 
 /* In every utility function you add that needs to use variables 
    in php_xcb_globals, call TSRMLS_FETCH(); after declaring other 

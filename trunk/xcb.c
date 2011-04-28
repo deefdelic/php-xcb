@@ -29,7 +29,8 @@
 #include <xcb/xcb.h>
 
 int le_xcb_connection;
-ZEND_DECLARE_MODULE_GLOBALS( xcb)
+
+ZEND_DECLARE_MODULE_GLOBALS( xcb )
 
 /* True global resources - no need for thread safety here */
 static int le_xcb;
