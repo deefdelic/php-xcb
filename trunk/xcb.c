@@ -439,9 +439,11 @@ PHP_FUNCTION( xcb_create_window) {
 	zval *zconnection;
 	int windowId, parentId, width, height, x, y, border;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rlllllll", &zconnection, &windowId, &parentId, &width, &height, &x, &y, &border) == FAILURE) {
+		php_printf("Error Parsing Parameters");
 		return;
-	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
-
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	php_printf("Creating window");
 	xcb_create_window(c->connection, XCB_COPY_FROM_PARENT, windowId, parentId, x, y, width, height, border, XCB_WINDOW_CLASS_INPUT_OUTPUT, c->screen->root_visual, 0, NULL);
 	RETURN_NULL();
 }

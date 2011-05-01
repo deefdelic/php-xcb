@@ -7,16 +7,18 @@ $tmp = xcb_list_extensions($xcb);
 var_export($tmp);
 
 
-foreach($tmp as $name){
+//foreach($tmp as $name){
 	//$info = xcb_query_extension($xcb, $name);
 	//echo $name .":".$info['first_event']."\n";
 	//var_export(xcb_query_extension($name));
-}
+//}
 
 //exit();
 
 $newid = xcb_generate_id($xcb);
+echo "\n newid is $newid\n root id is ".xcb_root_id($xcb)."\n";
 xcb_create_window($xcb, $newid, xcb_root_id($xcb), 200, 200, 10, 10, 6);
+echo "created window\n";
 xcb_configure_window_events($xcb, $newid, array(1048576,  524288));
 xcb_map_window($xcb, $newid);
 xcb_flush($xcb);
