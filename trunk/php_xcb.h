@@ -41,7 +41,7 @@ typedef struct _php_xcb_connection {
 	xcb_screen_t *screen;
 } php_xcb_connection;
 
-#define PHP_XCB_CONNECTION_RES_NAME "XCB CONNECTION"
+#define PHP_XCB_CONNECTION_RES_NAME "XCB_CONNECTION"
 
 
 PHP_MINIT_FUNCTION(xcb);
