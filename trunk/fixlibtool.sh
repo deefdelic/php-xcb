@@ -7,7 +7,7 @@ aclocal
 libtoolize --force
 autoheader
 autoconf
-./configure --with-xcb
+./configure --with-xcb --enable-debug
 make
 make install
 

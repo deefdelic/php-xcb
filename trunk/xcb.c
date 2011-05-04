@@ -352,10 +352,12 @@ PHP_FUNCTION( xcb_init) {
 	}
 
 	if (xconnection == 0) {
-		RETURN_BOOL(1);
+		php_printf("connection returned false");
+		RETURN_FALSE;;
 	} else {
 		if (xcb_connection_has_error(xconnection)) {
-			RETURN_BOOL(1);
+			php_printf("connection has error");
+			RETURN_FALSE;
 		} else {
 			c = emalloc(sizeof(php_xcb_connection));
 			c->connection = xconnection;
@@ -426,7 +428,8 @@ PHP_FUNCTION( xcb_generate_id) {
 	zval *zconnection;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zconnection) == FAILURE) {
 		return;
-	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}
+	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 	xcb_window_t newID = xcb_generate_id(c->connection);
 	RETURN_LONG(newID);
 }
@@ -439,13 +442,16 @@ PHP_FUNCTION( xcb_create_window) {
 	zval *zconnection;
 	int windowId, parentId, width, height, x, y, border;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rlllllll", &zconnection, &windowId, &parentId, &width, &height, &x, &y, &border) == FAILURE) {
-		php_printf("Error Parsing Parameters");
 		return;
 	}
+	php_printf("Fetching Resouce...\n");
 	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
-	php_printf("Creating window");
-	xcb_create_window(c->connection, XCB_COPY_FROM_PARENT, windowId, parentId, x, y, width, height, border, XCB_WINDOW_CLASS_INPUT_OUTPUT, c->screen->root_visual, 0, NULL);
-	RETURN_NULL();
+	php_printf("Resouce fetched...\n");
+
+	php_printf("Creating window...\n");
+	xcb_create_window(c->connection, c->screen->root_depth, (xcb_window_t) windowId, (xcb_window_t) parentId, x, y, width, height, border, XCB_WINDOW_CLASS_INPUT_OUTPUT, c->screen->root_visual, 0, NULL);
+	php_printf("created_window\n");
+	RETURN_BOOL(1);
 }
 /* }}} */
 
