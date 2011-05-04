@@ -20,7 +20,7 @@ $rootid = xcb_root_id($xcb);
 echo "\n newid is $newid\n root id is ".$rootid."\n";
 xcb_create_window($xcb, $newid, $rootid, 200, 200, 10, 10, 6);
 echo "created window in test\n";
-xcb_configure_window_events($xcb, $newid, array(1048576,  524288));
+xcb_configure_window_events($xcb, $newid, array(16,32,4,8));
 xcb_map_window($xcb, $newid);
 xcb_flush($xcb);
 sleep(1);
@@ -105,7 +105,6 @@ xcb_create_gc($xcb, $newid, $gcid, array(4, 8), array($red, $red));
 
 xcb_poly_fill_rectangle($xcb, $newid, $gcid, 10, 10, 20, 20);
 xcb_flush($xcb);
-
 
 echo "End Test\n";
 while ($e = xcb_wait_for_event($xcb)){

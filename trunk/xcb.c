@@ -30,7 +30,7 @@
 
 int le_xcb_connection;
 
-ZEND_DECLARE_MODULE_GLOBALS( xcb )
+ZEND_DECLARE_MODULE_GLOBALS( xcb)
 
 /* True global resources - no need for thread safety here */
 static int le_xcb;
@@ -336,7 +336,14 @@ PHP_MINFO_FUNCTION( xcb) {
 	php_info_print_table_end();
 }
 /* }}} */
-
+static void testCookie(xcb_void_cookie_t cookie, xcb_connection_t *connection, char *errMessage) {
+	xcb_generic_error_t *error = xcb_request_check(connection, cookie);
+	if (error) {
+		fprintf(stderr, "ERROR: %s : %d\n", errMessage, error->error_code);
+		xcb_disconnect(connection);
+		exit(-1);
+	}
+}
 /* {{{ proto res xcb_init([str display])
  Instanciates a connection with x11, and returns a resource pointer to it */
 PHP_FUNCTION( xcb_init) {
@@ -346,9 +353,9 @@ PHP_FUNCTION( xcb_init) {
 	xcb_screen_t *screen;
 	php_xcb_connection *c;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &dispnum, &dispnum_len) == SUCCESS) {
-//		php_printf("\tattempting to connect on ");
-//		php_printf(dispnum);
-//		php_printf("\n");
+		//		php_printf("\tattempting to connect on ");
+		//		php_printf(dispnum);
+		//		php_printf("\n");
 		xconnection = xcb_connect(dispnum, NULL);
 	} else {
 		xconnection = xcb_connect(NULL, NULL);
@@ -356,7 +363,8 @@ PHP_FUNCTION( xcb_init) {
 
 	if (xconnection == 0) {
 		php_printf("connection returned false\n");
-		RETURN_FALSE;;
+		RETURN_FALSE;
+		;
 	} else {
 		if (xcb_connection_has_error(xconnection)) {
 			php_printf("connection has error\n");
@@ -431,8 +439,7 @@ PHP_FUNCTION( xcb_generate_id) {
 	zval *zconnection;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zconnection) == FAILURE) {
 		return;
-	}
-	ZEND_FETCH_RESOURCE(c, php_xcb_connection *, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	} ZEND_FETCH_RESOURCE(c, php_xcb_connection *, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 	xcb_window_t newID = xcb_generate_id(c->connection);
 	RETURN_LONG(newID);
 }
@@ -589,13 +596,15 @@ PHP_FUNCTION( xcb_configure_window_events) {
 	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 	zval_to_mask(zvals, &intMask);
 	values[0] = intMask;
-	php_printf("our mask value: %d or intMask: %d \n", values[0], intMask);
-	php_printf("their values: %d \n", XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY);
+	//php_printf("our mask value: %d or intMask: %d \n", values[0], intMask);
+	//php_printf("their values: %d \n", XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY);
 	cookie = xcb_change_window_attributes_checked(c->connection, (xcb_window_t) windowId, XCB_CW_EVENT_MASK, values);
-	error = xcb_request_check(c->connection, cookie);
+	//error = xcb_request_check(c->connection, cookie);
+	testCookie(cookie, c->connection, "Unable to set events");
 	//TODO: raise an error
 	RETURN_NULL();
 }
+
 /* }}} */
 
 /* {{{ proto null xcb_configure_window_events_root(res connection, int window_id)
@@ -704,7 +713,7 @@ PHP_FUNCTION( xcb_reparent_window) {
 	long windowId, newParentId, x, y;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rllll",&zconnection, &windowId, &newParentId, &x, &y) == FAILURE) {
 		return;
-	} ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
 	xcb_reparent_window(c->connection, (xcb_window_t) windowId, (xcb_window_t) newParentId, x, y);
 RETURN_NULL()
@@ -719,7 +728,7 @@ PHP_FUNCTION( xcb_get_geometry) {
 	long windowId;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &windowId) == FAILURE) {
 		return;
-	} ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
 	xcb_get_geometry_reply_t* geom = xcb_get_geometry_reply(c->connection, xcb_get_geometry(c->connection, (xcb_drawable_t) windowId), NULL);
 	array_init(return_value);
@@ -744,7 +753,7 @@ PHP_FUNCTION( xcb_query_tree) {
 	xcb_query_tree_reply_t *reply;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &windowId) == FAILURE) {
 		return;
-	} ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
 	reply = xcb_query_tree_reply(c->connection, xcb_query_tree(c->connection, windowId), 0);
 	len = xcb_query_tree_children_length(reply);
@@ -764,7 +773,7 @@ PHP_FUNCTION( xcb_destroy_window) {
 	long windowId;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &windowId) == FAILURE) {
 		return;
-	} ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
 	xcb_destroy_window(c->connection, windowId);
 	RETURN_NULL();
@@ -778,7 +787,7 @@ PHP_FUNCTION( xcb_list_extensions) {
 	zval *zconnection;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zconnection) == FAILURE) {
 		return;
-	} ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
 	xcb_list_extensions_cookie_t cookie = xcb_list_extensions(c->connection);
 	xcb_list_extensions_reply_t *r = xcb_list_extensions_reply(c->connection, cookie, NULL);
@@ -809,7 +818,7 @@ PHP_FUNCTION( xcb_query_extension) {
 	xcb_generic_error_t *error;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rs", &zconnection, &name, &namelen) == FAILURE) {
 		return;
-	} ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 	xcb_query_extension_reply_t *rep = xcb_query_extension_reply(c->connection, xcb_query_extension(c->connection, namelen, name), &error);
 	if (NULL != error) {
 		php_printf("Unable to query extension %s\n", name);
@@ -845,7 +854,7 @@ PHP_FUNCTION( xcb_create_colormap) {
 	long mapId, windowId;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rll", &zconnection, &mapId, &windowId) == FAILURE) {
 		return;
-	} ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
 	xcb_create_colormap(c->connection, XCB_COLORMAP_ALLOC_NONE, mapId, windowId, c->screen->root_visual);
 	RETURN_NULL();
@@ -860,7 +869,7 @@ PHP_FUNCTION( xcb_alloc_color) {
 	long mapId, red, blue, green;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rllll", &zconnection, &mapId,  &red, &blue, &green) == FAILURE) {
 		return;
-	} ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
 	xcb_alloc_color_reply_t *reply = xcb_alloc_color_reply(c->connection, xcb_alloc_color(c->connection, mapId, red, blue, green), NULL);
 	RETURN_LONG(reply->pixel);
@@ -1189,12 +1198,12 @@ PHP_FUNCTION( xcb_wait_for_event) {
 	ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 	php_printf("Waiting for events\n");
 	if (evt = xcb_wait_for_event(c->connection)) {
-		php_printf("\tevent\n");
+		//php_printf("\tevent %l\n", evt->response_type);
 		if (NULL != evt) {
 			if (evt->response_type && xcb_event_get_label(evt->response_type)) {
-				php_printf("php_xcb: event %s \n", (char*) xcb_event_get_label(evt->response_type));
+				//php_printf("php_xcb: event %s \n", (char*) xcb_event_get_label(evt->response_type));
 				array_init(return_value);
-				add_get_assoc_string_ex(return_value, "response_type", strlen("response_type") + 1, (const char *) xcb_event_get_label(evt->response_type), NULL, 1);
+				add_assoc_string(return_value, (char *) "response_type", (char *) xcb_event_get_label(evt->response_type),  1);
 				switch (evt->response_type & ~0x80) {
 				case XCB_BUTTON_PRESS:
 					event_xcb_button_press(evt, return_value);
@@ -1248,11 +1257,11 @@ PHP_FUNCTION( xcb_wait_for_event) {
 					event_error(evt, return_value);
 					break;
 				default:
-					php_printf("php_xcb: Unknown Event '%s' Recieved\n", (char*) xcb_event_get_label(evt->response_type));
+					//php_printf("php_xcb: Unknown Event '%s' Recieved\n", (char*) xcb_event_get_label(evt->response_type));
 					break;
 				}
 			} else {
-				php_printf("php_xcb: Unknown Event type '%d' Recieved (%s) \n", evt->response_type, (char*) xcb_event_get_label(evt->response_type & 0x7f));
+				//php_printf("php_xcb: Unknown Event type '%d' Recieved (%s) \n", evt->response_type, (char*) xcb_event_get_label(evt->response_type & 0x7f));
 				array_init(return_value);
 				add_assoc_long(return_value, "response_type", evt->response_type);
 
