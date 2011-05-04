@@ -81,10 +81,6 @@ PHP_FUNCTION(xcb_alloc_named_color);
 PHP_FUNCTION(xcb_create_gc);
 PHP_FUNCTION(xcb_poly_fill_rectangle);
 
-//event_xcb_destroy_notify(xcb_generic_event_t, zval);
-//event_xcb_button_release(xcb_generic_event_t, zval);
-//event_xcb_button_press(xcb_generic_event_t, zval);
-
 ZEND_BEGIN_MODULE_GLOBALS(xcb)
 	long  global_value;
 	char *global_string;
