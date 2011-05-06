@@ -339,7 +339,7 @@ PHP_MINFO_FUNCTION( xcb) {
 static void testCookie(xcb_void_cookie_t cookie, xcb_connection_t *connection, char *errMessage) {
 	xcb_generic_error_t *error = xcb_request_check(connection, cookie);
 	if (error) {
-		php_printf("ERROR: %s : %l\n", errMessage, error->error_code);
+		php_printf("ERROR: %s : %d\n", errMessage, error->error_code);
 		//xcb_disconnect(connection);
 		//exit(-1);
 	}
@@ -353,10 +353,10 @@ PHP_FUNCTION( xcb_init) {
 	xcb_screen_t *screen;
 	php_xcb_connection *c;
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s", &dispnum, &dispnum_len) == SUCCESS) {
-		//		php_printf("\tattempting to connect on ");
+				php_printf("XCB: attempting to connect on (%s)\n", dispnum);
 		//		php_printf(dispnum);
 		//		php_printf("\n");
-		xconnection = xcb_connect(dispnum, NULL);
+		xconnection = xcb_connect(dispnum, 0);
 	} else {
 		xconnection = xcb_connect(NULL, NULL);
 	}
@@ -475,9 +475,7 @@ PHP_FUNCTION( xcb_map_window) {
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &windowId) == FAILURE) {
 		return;
 	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
-	php_printf("XCB: Mapping window %d\n", windowId);
 	xcb_map_window(c->connection, (xcb_window_t) windowId);
-	php_printf("XCB: Mapped window %d\n", windowId);
 	//RETURN_NULL();
 }
 /* }}} */
@@ -880,6 +878,20 @@ PHP_FUNCTION( xcb_alloc_color) {
 }
 /* }}} */
 
+static long php_xcb_alloc_named_color(php_xcb_connection *c, xcb_colormap_t map, char* color) {
+	xcb_alloc_named_color_cookie_t color_cookie;
+	xcb_alloc_named_color_reply_t *color_reply;
+	php_printf("XCB:  attempting to allocate color\n");
+color_cookie = xcb_alloc_named_color(c->connection, map, strlen(color), color);
+	php_printf("XCB:  requested the color %s\n", color);
+	if (color_reply = xcb_alloc_named_color_reply(c->connection, color_cookie, 0)) {
+		php_printf("XCB:  got the reply color\n");
+		return color_reply->pixel;
+	} else {
+		php_printf("XCB: xcb_alloc_named_color_reply failed\n");
+	}
+}
+
 /* {{{ proto int xcb_alloc_named_color(res connection, int colormap_id, str name)
  add a color to a colormap by name */
 PHP_FUNCTION( xcb_alloc_named_color) {
@@ -888,22 +900,16 @@ PHP_FUNCTION( xcb_alloc_named_color) {
 	char* colstr;
 	long mapId;
 	int colstrlen;
-	xcb_generic_error_t *error;
+
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rls", &zconnection, &mapId,  &colstr, &colstrlen) == FAILURE) {
 		return;
 	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
-	php_printf("XCB:  attempting to allocate color\n");
-	xcb_alloc_named_color_reply_t *col_reply = xcb_alloc_named_color_reply(c->connection, xcb_alloc_named_color(c->connection, (xcb_colormap_t) mapId, colstrlen, colstr), &error);
-	if (NULL != error) {
-		php_printf("XCB: Unable to allocate color\n", colstr);
-		//RETURN_LONG(0);
-		return;
-	} else {
-		php_printf("XCB: allocated color\n");
-	}
-	RETURN_LONG(col_reply->pixel);
+
+	RETURN_LONG(php_xcb_alloc_named_color(c, (xcb_colormap_t) mapId, colstr));
 }
 /* }}} */
+
+
 
 /* {{{ proto null xcb_create_gc(res connection, int window_id, int graphic_context_id, arr masks, arr values)
  create a new graphics context */
