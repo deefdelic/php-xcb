@@ -1,5 +1,8 @@
 <?php
-$xcb = xcb_init();
+$xcb = xcb_init(":0.0");
+if (!$xcb){
+exit();
+}
 echo "Initializing: ".$xcb ."\n----------\n";
 echo "Root Width: ".xcb_root_width_in_pixels($xcb)."\n";
 
