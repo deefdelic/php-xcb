@@ -1261,7 +1261,7 @@ PHP_FUNCTION( xcb_wait_for_event) {
 					event_xcb_unmap_notify(evt, return_value);
 					break;
 				case XCB_DESTROY_NOTIFY:
-					add_assoc_string(return_value, "response_type", "DestoryNotify",  1);
+					add_assoc_string(return_value, "response_type", "DestroyNotify",  1);
 					event_xcb_destroy_notify(evt, return_value);
 					break;
 				case XCB_LEAVE_NOTIFY:
