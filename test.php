@@ -1,4 +1,5 @@
 <?php
+require_once 'define.php';
 $xcb = xcb_init(":0.0");
 if (!$xcb){
 exit();
@@ -82,7 +83,7 @@ echo "Test Configure: \n";
 //    XCB_CONFIG_WINDOW_SIBLING = 32,
 //    XCB_CONFIG_WINDOW_STACK_MODE = 64
 //} xcb_config_window_t;
-xcb_configure_window($xcb, $newid, array(1, 2, 4, 8), array(150, 150, 300, 300));
+xcb_configure_window($xcb, $newid, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT,  array(150, 150, 300, 300));
 xcb_flush($xcb);
 sleep(1);
 var_export(xcb_get_geometry($xcb, $newid));
@@ -100,14 +101,17 @@ $intColorMap = xcb_get_default_colormap($xcb);
 echo "Colormap: {$intColorMap}\n";
 //$red = xcb_alloc_color($intColorMap, "red", 255, 0, 0);
 $red = xcb_alloc_named_color($xcb, $intColorMap, "Red");
+$blue = xcb_alloc_named_color($xcb, $intColorMap, "Blue");
 echo "Red: {$red}\n";
 
 $gcid = xcb_generate_id($xcb);
 echo "GC ID: {$gcid}\n";
-xcb_create_gc($xcb, $newid, $gcid, array(4, 8), array($red, $red));
+xcb_create_gc($xcb, $newid, $gcid, XCB_GC_FOREGROUND|XCB_GC_BACKGROUND, array($red, $blue));
 
 xcb_poly_fill_rectangle($xcb, $newid, $gcid, 10, 10, 20, 20);
 xcb_flush($xcb);
+
+echo "Atom name test: ".xcb_get_atom_name($xcb, 32);
 
 echo "End Test\n";
 while ($e = xcb_wait_for_event($xcb)){
