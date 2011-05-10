@@ -27,6 +27,7 @@
 #include "ext/standard/info.h"
 #include "php_xcb.h"
 #include <xcb/xcb.h>
+#include <xcb/xcb_icccm.h>
 
 int le_xcb_connection;
 
@@ -206,6 +207,51 @@ ZEND_END_ARG_INFO();
 ZEND_BEGIN_ARG_INFO(arginfo_xcb_wait_for_event, 0)
 ZEND_ARG_INFO(0, xcb_resource)
 ZEND_END_ARG_INFO();
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_create_pixmap, 0)
+ZEND_ARG_INFO(0, xcb_resource)
+ZEND_ARG_INFO(0, window_id)
+ZEND_ARG_INFO(0, pixmap_id)
+ZEND_ARG_INFO(0, width)
+ZEND_ARG_INFO(0, height)
+ZEND_END_ARG_INFO();
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_copy_area, 0)
+ZEND_ARG_INFO(0, xcb_resource)
+ZEND_ARG_INFO(0, dst_window)
+ZEND_ARG_INFO(0, graphics_context)
+ZEND_ARG_INFO(0, src_x)
+ZEND_ARG_INFO(0, src_y)
+ZEND_ARG_INFO(0, dst_x)
+ZEND_ARG_INFO(0, dst_y)
+ZEND_ARG_INFO(0, src_width)
+ZEND_ARG_INFO(0, src_height)
+ZEND_END_ARG_INFO();
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_open_font, 0)
+ZEND_ARG_INFO(0, xcb_resource)
+ZEND_ARG_INFO(0, font_id)
+ZEND_ARG_INFO(0, font_name)
+ZEND_END_ARG_INFO();
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_image_text_8, 0)
+ZEND_ARG_INFO(0, xcb_resource)
+ZEND_ARG_INFO(0, window_id)
+ZEND_ARG_INFO(0, gc_id)
+ZEND_ARG_INFO(0, x)
+ZEND_ARG_INFO(0, y)
+ZEND_ARG_INFO(0, text)
+ZEND_END_ARG_INFO();
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_get_wm_name, 0)
+ZEND_ARG_INFO(0, xcb_resource)
+ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_xcb_get_atom_name, 0)
+ZEND_ARG_INFO(0, xcb_resource)
+ZEND_ARG_INFO(0, window_id)
+ZEND_END_ARG_INFO()
 /* }}} */
 
 /* {{{ xcb_functions[]
@@ -243,6 +289,12 @@ const zend_function_entry xcb_functions[] = {
 	PHP_FE(xcb_create_gc, arginfo_xcb_create_gc)
 	PHP_FE(xcb_poly_fill_rectangle, arginfo_xcb_poly_fill_rectangle)
 	PHP_FE(xcb_alloc_named_color, arginfo_xcb_alloc_named_color)
+	PHP_FE(xcb_create_pixmap, arginfo_xcb_create_pixmap)
+	PHP_FE(xcb_copy_area, arginfo_xcb_copy_area)
+	PHP_FE(xcb_open_font, arginfo_xcb_open_font)
+	PHP_FE(xcb_image_text_8, arginfo_xcb_image_text_8)
+	PHP_FE(xcb_get_wm_name, arginfo_xcb_get_wm_name)
+	PHP_FE(xcb_get_atom_name, arginfo_xcb_get_atom_name)
 	{	NULL, NULL, NULL} /* Must be the last line in xcb_functions[] */
 };
 /* }}} */
@@ -538,7 +590,7 @@ void zval_to_mask(zval* mask, uint32_t* retPtr) {
 /* {{{ proto null xcb_configure_window(res connection, int window_id, arr mask, arr values)
  Apply any number of configurations to a window at once...  See xproto.h for valid mask values */
 PHP_FUNCTION( xcb_configure_window) {
-	long windowId;
+	long windowId, value_mask;
 	int i;
 	php_xcb_connection *c;
 	zval *zconnection;
@@ -548,15 +600,12 @@ PHP_FUNCTION( xcb_configure_window) {
 	HashTable* val_hash;
 	HashPosition pointer;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rlaa", &zconnection, &windowId, &zmask, &zvals) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rlla", &zconnection, &windowId, &value_mask, &zvals) == FAILURE) {
 		return;
 	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
 
-	//convert the mask;
-	zval_to_mask(zmask, &intMask);
-
 	val_hash = Z_ARRVAL_P(zvals);
-	uint32_t retval[zend_hash_num_elements(val_hash)];
+	uint32_t value_list[zend_hash_num_elements(val_hash)];
 	i = 0;
 	for (zend_hash_internal_pointer_reset_ex(val_hash, &pointer); zend_hash_get_current_data_ex(val_hash, (void**) &data, &pointer) == SUCCESS; zend_hash_move_forward_ex(val_hash, &pointer)) {
 		if (Z_TYPE_PP(data) == IS_LONG) {
@@ -565,17 +614,11 @@ PHP_FUNCTION( xcb_configure_window) {
 			temp = **data;
 			zval_copy_ctor(&temp);
 			val = Z_LVAL(temp);
-			//php_printf("Adding %d to array at possition %d \n", val, i);
-			retval[i] = (uint32_t) val;
+			value_list[i] = (uint32_t) val;
 			i++;
-		} else {
-			//php_printf("XCB: unknown type\n");
 		}
 	}
-
-	//php_printf("xcb_configure_window mask value: %d  \n", intMask);
-	xcb_configure_window(c->connection, (xcb_window_t) windowId, intMask, (const uint32_t *) retval);
-	//RETURN_NULL();
+	xcb_configure_window(c->connection, (xcb_window_t) windowId, value_mask, (const uint32_t *) value_list);
 }
 /* }}} */
 
@@ -599,7 +642,7 @@ PHP_FUNCTION( xcb_configure_window_events) {
 	//php_printf("our mask value: %d or intMask: %d \n", values[0], intMask);
 	//php_printf("their values: %d \n", XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT | XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY);
 //	cookie = xcb_change_window_attributes_checked(c->connection, (xcb_window_t) windowId, XCB_CW_EVENT_MASK, values);
-	php_printf("XCB:  configure window events\n");
+	//php_printf("XCB:  configure window events\n");
 	xcb_change_window_attributes(c->connection, (xcb_window_t) windowId, XCB_CW_EVENT_MASK, values);
 	//error = xcb_request_check(c->connection, cookie);
 	//testCookie(cookie, c->connection, "Unable to set events");
@@ -916,16 +959,16 @@ PHP_FUNCTION( xcb_alloc_named_color) {
 PHP_FUNCTION( xcb_create_gc) {
 	php_xcb_connection *c;
 	zval *zconnection;
-	long windowId, gcId;
+	long windowId, gcId, value_mask;
 	int i;
-	zval *zmask, *zvals, **data;
+	zval *zvals, **data;
 	HashTable* val_hash;
 	HashPosition pointer;
 	uint32_t intMask;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rllaa", &zconnection, &windowId, &gcId, &zmask, &zvals) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rllla", &zconnection, &windowId, &gcId, &value_mask, &zvals) == FAILURE) {
 		return;
 	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
-	zval_to_mask(zmask, &intMask);
+	//zval_to_mask(zmask, &intMask);
 
 	val_hash = Z_ARRVAL_P(zvals);
 	uint32_t retval[zend_hash_num_elements(val_hash)];
@@ -945,9 +988,7 @@ PHP_FUNCTION( xcb_create_gc) {
 		}
 	}
 	//    uint32_t        values[3]  = {screen->black_pixel, 0, screen->black_pixel};
-	php_printf("XCB: creating GC\n");
-	xcb_create_gc(c->connection, gcId, windowId, intMask, (const uint32_t *) retval);
-	php_printf("XCB: created GC\n");
+	xcb_create_gc(c->connection, gcId, windowId, (uint32_t) value_mask, (const uint32_t *) retval);
 	//RETURN_NULL();
 }
 /* }}} */
@@ -967,6 +1008,106 @@ PHP_FUNCTION( xcb_poly_fill_rectangle) {
 	//xcb_flush(c->connection);
 }
 /* }}} */
+
+/* {{{ proto null xcb_create_pixmap(res connection, int window_id, int pixmapId, int x1, int width, int height)
+ create an empty pixmap*/
+PHP_FUNCTION( xcb_create_pixmap ) {
+	php_xcb_connection *c;
+	zval *zconnection;
+	long windowId, pixmapId, width, height;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rllllll", &zconnection, &windowId, &pixmapId, &width, &height) == FAILURE) {
+		return;
+	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	//reverse pixmap and window in args for consistancy
+	xcb_create_pixmap(c->connection, c->screen->root_depth, pixmapId, windowId, width, height);
+
+}
+/* }}} */
+
+/* {{{ proto null xcb_copy_area(res connection, int window_id, int pixmapId, int x1, int width, int height)
+ create an empty pixmap*/
+PHP_FUNCTION( xcb_copy_area ) {
+	php_xcb_connection *c;
+	zval *zconnection;
+	long src_window, dst_window, graphics_context, src_x, src_y, dst_x, dst_y, src_width, src_height;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rlllllllll", &zconnection, &src_window, &dst_window, &graphics_context, &src_x, &src_y, &dst_x, &dst_y, &src_width, &src_height) == FAILURE) {
+		return;
+	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	xcb_copy_area(c->connection, src_window, dst_window, graphics_context, src_x, src_y, dst_x, dst_y, src_width, src_height);
+
+}
+/* }}} */
+
+PHP_FUNCTION( xcb_open_font ) {
+	php_xcb_connection *c;
+	zval *zconnection;
+	long font_id;
+	char* font_name;
+	int font_name_len;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rls", &zconnection, &font_id, &font_name, &font_name_len) == FAILURE) {
+		return;
+	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	xcb_open_font(c->connection, font_id, font_name_len, font_name);
+
+}
+
+PHP_FUNCTION (xcb_image_text_8) {
+	php_xcb_connection *c;
+	zval *zconnection;
+	long window_id, gc_id, x, y;
+	char* image_text;
+	int image_text_len;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rlllls", &zconnection, &window_id, &gc_id, &x, &y, &image_text, &image_text_len) == FAILURE) {
+		return;
+	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	xcb_image_text_8(c->connection, image_text_len, window_id, gc_id, x, y, image_text);
+}
+
+PHP_FUNCTION (xcb_get_wm_name) {
+	php_xcb_connection *c;
+	zval *zconnection;
+	long window_id;
+	xcb_get_text_property_reply_t prop;
+	uint8_t got_reply;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &window_id) == FAILURE) {
+		return;
+	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+
+	xcb_flush(c->connection);
+	xcb_get_property_cookie_t cookie = xcb_get_wm_name_unchecked(c->connection, (xcb_window_t) window_id);
+	php_printf("XCB: attempting to fetch window name\n");
+	got_reply = xcb_get_wm_name_reply(c->connection, cookie, &prop, NULL);
+
+	if (!got_reply || prop.name_len == 0) {
+		php_printf("XCB: got empty window name reply\n");
+		RETURN_STRING("untitled", 1);
+		//free(prop);
+		//free(got_reply);
+	} else {
+		php_printf("XCB: got window name reply\n");
+		char *cstr = strndup(prop.name, prop.name_len);
+		//free(prop);
+		//free(got_reply);
+		RETURN_STRING(cstr,1);
+	}
+}
+
+PHP_FUNCTION (xcb_get_atom_name){
+	php_xcb_connection *c;
+	zval *zconnection;
+	long atom_id;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "rl", &zconnection, &atom_id) == FAILURE) {
+		return;
+	}ZEND_FETCH_RESOURCE(c, php_xcb_connection*, &zconnection, -1, PHP_XCB_CONNECTION_RES_NAME, le_xcb_connection);
+	php_printf("XCB: attempting to fetch the atom\n");
+	xcb_get_atom_name_reply_t *atom =  xcb_get_atom_name_reply(c->connection, xcb_get_atom_name_unchecked(c->connection, (xcb_atom_t) atom_id), NULL);
+	php_printf("XCB: got the atom, attempting to get the name\n");
+	char *cstr = strndup(xcb_get_atom_name_name(atom), xcb_get_atom_name_name_length(atom));
+    free(atom);
+	RETURN_STRING(cstr,1);
+}
+/* }}} */
+
 event_xcb_button_press(xcb_generic_event_t* evt, zval* return_value) {
 	xcb_button_press_event_t *e = (xcb_button_press_event_t *) evt;
 	add_assoc_long(return_value, "detail", e->detail);
@@ -1189,6 +1330,20 @@ event_xcb_expose(xcb_generic_event_t* evt, zval* return_value) {
 	free(e);
 }
 
+event_xcb_property_notify(php_xcb_connection* c, xcb_generic_event_t* evt, zval* return_value){
+	xcb_property_notify_event_t *e = (xcb_property_notify_event_t *) evt;
+	//xcb_get_atom_name_reply_t *atom =  xcb_get_atom_name_reply(c->connection, xcb_get_atom_name(c->connection, e->atom), NULL);
+	//php_printf("atom name: %s\n", xcb_get_atom_name_name(atom));
+	add_assoc_long(return_value, "sequence", e->sequence);
+	add_assoc_long(return_value, "window", e->window);
+	add_assoc_long(return_value, "atom", e->atom);
+	//add_assoc_string_ex(return_value, "atom_name",9, "test", 1);
+	add_assoc_long(return_value, "time", e->time);
+	add_assoc_long(return_value, "state", e->state);
+	free(e);
+	//free(atom);
+}
+
 event_generic(xcb_generic_event_t* evt, zval* return_value) {
 	php_printf("XCB: generic event\n");
 }
@@ -1284,17 +1439,28 @@ PHP_FUNCTION( xcb_wait_for_event) {
 					add_assoc_string(return_value, "response_type", "Expose",  1);
 					event_xcb_expose(evt, return_value);
 					break;
+				case XCB_PROPERTY_NOTIFY:
+					add_assoc_string(return_value, "response_type", "PropertyNotify",  1);
+					event_xcb_property_notify(c, evt, return_value);
+					break;
 				case 0:
 					event_error(evt, return_value);
 					break;
 				default:
-					//php_printf("XCB: Error- Unknown event");
-					//php_printf("php_xcb: Unknown Event '%s' Recieved\n", (char*) xcb_event_get_label(evt->response_type));
+					php_printf("XCB: Error- Unknown event");
+					//xcb_generic_event_t(evt, return_value);
+					php_printf("php_xcb: Unknown Event '%d' Recieved\n", evt->response_type);
+					add_assoc_string(return_value, "response_type", "Unknown",  1);
+					event_generic(evt, return_value);
 					break;
 				}
 			} else {
+				php_printf("php_xcb: Unknown Extended Event '%d' Recieved\n", evt->response_type);
+				add_assoc_string(return_value, "response_type", "Unknown2",  1);
+				event_generic(evt, return_value);
+				/**
 				//php_printf("php_xcb: Unknown Event type '%d' Recieved (%s) \n", evt->response_type, (char*) xcb_event_get_label(evt->response_type & 0x7f));
-				//php_printf("XCB: unknown event recieved\n");
+				php_printf("XCB: unknown event recieved\n");
 				array_init(return_value);
 				add_assoc_long(return_value, "response_type", evt->response_type);
 
@@ -1311,12 +1477,13 @@ PHP_FUNCTION( xcb_wait_for_event) {
 					event_generic(evt, return_value);
 					break;
 				}
+				**/
 			}
 		} else {
-			//php_printf("XCB: null event\n");
+			php_printf("XCB: null event\n");
 		}
 	} else {
-		//php_printf("XCB: wait for event ended\n");
+		php_printf("XCB: wait for event ended\n");
 	}
 }
 /* }}} */

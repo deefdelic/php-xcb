@@ -80,6 +80,12 @@ PHP_FUNCTION(xcb_alloc_color);
 PHP_FUNCTION(xcb_alloc_named_color);
 PHP_FUNCTION(xcb_create_gc);
 PHP_FUNCTION(xcb_poly_fill_rectangle);
+PHP_FUNCTION(xcb_create_pixmap);
+PHP_FUNCTION(xcb_copy_area);
+PHP_FUNCTION(xcb_open_font);
+PHP_FUNCTION(xcb_image_text_8);
+PHP_FUNCTION(xcb_get_wm_name);
+PHP_FUNCTION(xcb_get_atom_name);
 
 ZEND_BEGIN_MODULE_GLOBALS(xcb)
 	long  global_value;
