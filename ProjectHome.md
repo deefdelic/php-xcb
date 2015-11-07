@@ -1,0 +1,1 @@
+php-xcb is a wrapper extension for php allowing interaction with the X11 desktop.
